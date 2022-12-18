@@ -1,0 +1,132 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{DB3F13A2-A323-4902-AD30-87A28B8836B6}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>AllTameable_TamingOverhaul</RootNamespace>
+    <AssemblyName>AllTameable_TamingOverhaul</AssemblyName>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <Deterministic>true</Deterministic>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="0Harmony">
+      <HintPath>..\Libs\0Harmony.dll</HintPath>
+    </Reference>
+    <Reference Include="assembly_guiutils, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Libs\assembly_guiutils.dll</HintPath>
+    </Reference>
+    <Reference Include="assembly_steamworks, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Libs\assembly_steamworks.dll</HintPath>
+    </Reference>
+    <Reference Include="assembly_utils, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Libs\assembly_utils.dll</HintPath>
+    </Reference>
+    <Reference Include="assembly_valheim, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Libs\assembly_valheim.dll</HintPath>
+    </Reference>
+    <Reference Include="BepInEx">
+      <HintPath>..\Libs\BepInEx.dll</HintPath>
+    </Reference>
+    <Reference Include="BepInEx.Harmony">
+      <HintPath>..\Libs\BepInEx.Harmony.dll</HintPath>
+    </Reference>
+    <Reference Include="CreatureLevelControl">
+      <HintPath>..\Libs\CreatureLevelControl.dll</HintPath>
+    </Reference>
+    <Reference Include="Jotunn">
+      <HintPath>..\Libs\Jotunn.dll</HintPath>
+    </Reference>
+    <Reference Include="RRRCore">
+      <HintPath>..\Libs\RRRCore.dll</HintPath>
+    </Reference>
+    <Reference Include="RRRNpcs">
+      <HintPath>..\Libs\RRRNpcs.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Xml" />
+    <Reference Include="UnityEngine">
+      <HintPath>..\Libs\UnityEngine.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.AssetBundleModule">
+      <HintPath>..\Libs\UnityEngine.AssetBundleModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Libs\UnityEngine.CoreModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.IMGUIModule, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Libs\UnityEngine.IMGUIModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.ParticleSystemModule">
+      <HintPath>..\Libs\UnityEngine.ParticleSystemModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.PhysicsModule">
+      <HintPath>..\Libs\UnityEngine.PhysicsModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.SpriteMaskModule">
+      <HintPath>..\Libs\UnityEngine.SpriteMaskModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.SpriteShapeModule">
+      <HintPath>..\Libs\UnityEngine.SpriteShapeModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.UI">
+      <HintPath>..\Libs\UnityEngine.UI.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="UnusedFiles\InManager.cs" />
+    <Compile Include="AllTameable\CfgPackage.cs" />
+    <None Include="AllTameable\RRRNPatches - Backup.cs" />
+    <None Include="AllTameable\RRRNPatchesTemplate.cs" />
+    <None Include="AllTameable\RRRNPatches.cs" />
+    <Compile Include="AllTameable\RRRCoreTameable.cs" />
+    <Compile Include="AllTameable\CLLCPatches.cs" />
+    <None Include="UnusedFiles\SE_Holder.cs" />
+    <Compile Include="AllTameable\ProcreationInfo.cs" />
+    <Compile Include="AllTameable\CLLC.cs" />
+    <Compile Include="AllTameable\AllTame_AnimalAI.cs" />
+    <Compile Include="AllTameable\RPC.cs" />
+    <Compile Include="AllTameable\TameListCfg.cs" />
+    <Compile Include="AllTameable\BetterTameHover.cs" />
+    <None Include="UnusedFiles\ConfigManager.cs" />
+    <Compile Include="AllTameable\DBG.cs" />
+    <Compile Include="AllTameable\Hatch.cs" />
+    <Compile Include="AllTameable\PetManager.cs" />
+    <Compile Include="AllTameable\Plugin.cs" />
+    <Compile Include="AllTameable\PrefabManager.cs" />
+    <Compile Include="AllTameable\Utils2.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <EmbeddedResource Include="Assets\taming_tool" />
+    <None Include="Assets\tameablelist.json" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>
