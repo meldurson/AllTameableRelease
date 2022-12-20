@@ -248,6 +248,63 @@ namespace AllTameable
         //}
 
 
+        //*************Testing Recruiting*****************
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(Tameable), "Interact")]
+        //private static class Prefix_Player_SetLocalPlayer
+        //{
+        private static void Prefix(Tameable __instance, Humanoid user, bool hold, bool alt)
+        {
+            DBG.blogDebug("in Interact prefix");
+            DBG.blogDebug("__instance=" + __instance);
+            DBG.blogDebug("alt=" + alt);
+
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(Humanoid), "UseItem")]
+        //private static class Prefix_Player_SetLocalPlayer
+        //{
+        private static void Prefix(Humanoid __instance, Inventory inventory, ItemDrop.ItemData item, bool fromInventoryGui)
+        {
+            int costtoRecruit = 5;
+            DBG.blogDebug("in UseItem prefix");
+            DBG.blogDebug("__instance="+__instance);
+            GameObject hoverObject = __instance.GetHoverObject(); //get go that looking at
+            Humanoid hoverCreature = hoverObject.GetComponent<Humanoid>(); //get the humanoid
+            Inventory inv2 = __instance.GetInventory(); //get players inventory
+            DBG.blogDebug("item.m_dropPrefab.name=" + item.m_dropPrefab.name); //item using
+            if (item.m_dropPrefab.name == "BlackCore")
+            {
+                int numininventory = inv2.CountItems(item.m_shared.m_name); // checks how many cores player has
+                DBG.blogDebug("Number of "+ item.m_dropPrefab.name + " is "+ numininventory);
+                if (numininventory >= costtoRecruit)
+                {
+                    DBG.blogDebug("Attempting Trade");
+                    if (!hoverCreature.IsTamed())
+                    {
+                        Tameable tame = new Tameable();
+                        tame = hoverCreature.gameObject.GetComponent<Tameable>();
+
+                        if(tame != null)
+                        {
+                            tame.Tame();
+                            bool itemremoved = inv2.RemoveItem(item, costtoRecruit);
+                            DBG.blogDebug("Recruited Dverger");
+                        }
+                        else
+                        {
+                            DBG.blogDebug("No tameable");
+                        } 
+                    }
+                }
+                else
+                {
+                    DBG.blogDebug("Not enough Black cores, need "+ costtoRecruit);
+                }
+            }
+        }
+
 
 
         /*
