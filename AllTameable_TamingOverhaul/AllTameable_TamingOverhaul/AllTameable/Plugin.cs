@@ -13,6 +13,7 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using System.Diagnostics;
 
 
 namespace AllTameable
@@ -25,7 +26,7 @@ namespace AllTameable
     internal class Plugin : BaseUnityPlugin
     {
         [Serializable]
-        public class TameTable : ICloneable
+        public class TameTable : ICloneable //All the info that can be changed for a creature
         {
             public bool commandable { get; set; } = true;
             public float tamingTime { get; set; } = 600f;
@@ -51,87 +52,91 @@ namespace AllTameable
         [HarmonyPatch(typeof(MonsterAI), "Awake")]
         //private static class MonsterAI_Awake_Patch
         //{
-            private static void Prefix(MonsterAI __instance)
-            {
+        private static void Prefix(MonsterAI __instance)
+        {
 
-                if (ZNet.instance.IsServer() || PostLoadServerConfig)
+            if (ZNet.instance.IsServer() || PostLoadServerConfig)
+            {
+                if (!PetManager.isInit)
                 {
-                    if (!PetManager.isInit)
-                    {
-                        DBG.blogDebug("Updating Creature Prefabs for Procreation");
-                        PetManager.Init(__instance.gameObject);
-                    }
-                    else if (!PetManager.isInit2)
-                    {
-                        DBG.blogDebug("Updating Procreation After Load");
-                        PetManager.Init2nd(__instance.gameObject);
-                    }
+                    DBG.blogDebug("Updating Creature Prefabs for Procreation");
+                    PetManager.Init(__instance.gameObject);
+                }
+                else if (!PetManager.isInit2)
+                {
+                    DBG.blogDebug("Updating Procreation After Load");
+                    PetManager.Init2nd(__instance.gameObject);
                 }
             }
+        }
         //}
+
+
+        
+
         [HarmonyPrefix]
-        [HarmonyPatch(typeof(Character), "RPC_Heal")]
+        [HarmonyPatch(typeof(Character), "RPC_Heal")] //removes healing 0 text if healing less than 0.1hp
         //private static class Character_RPC_Heal_Patch
         //{
-            private static void Prefix(out bool __state, long sender, float hp, ref bool showText)
+        private static void Prefix(out bool __state, long sender, float hp, ref bool showText)
+        {
+            //DBG.blogDebug("inPrefix"+ hp);
+            __state = showText;
+            if (hp < 0.1f)
             {
-                //DBG.blogDebug("inPrefix"+ hp);
-                __state = showText;
-                if (hp < 0.1f)
-                {
-                    showText = false;
-                }
+                showText = false;
             }
+        }
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(Character), "RPC_Heal")]
+        [HarmonyPatch(typeof(Character), "RPC_Heal")] //adds effect around creature if healing
 
         private static void Postfix(bool __state, Character __instance, long sender, float hp, ref bool showText)
+        {
+            //DBG.blogDebug("inPostfix");
+            if (__state && hp < 0.1)
             {
-                //DBG.blogDebug("inPostfix");
-                if (__state && hp < 0.1)
+                if (!__instance.m_nview.IsOwner())
                 {
-                    if (!__instance.m_nview.IsOwner())
-                    {
-                        return;
-                    }
-                    float num = Mathf.Min(__instance.GetHealth() + hp, __instance.GetMaxHealth());
-                    if (num > __instance.GetHealth())
-                    {
-                        //StatusEffect SE = se_holder.effect;
-                        __instance.m_seman.AddStatusEffect(prefabManager.effect, resetTime: false);
-                    }
+                    return;
+                }
+                float num = Mathf.Min(__instance.GetHealth() + hp, __instance.GetMaxHealth());
+                if (num > __instance.GetHealth())
+                {
+                    //StatusEffect SE = se_holder.effect;
+                    __instance.m_seman.AddStatusEffect(prefabManager.effect, resetTime: false);
                 }
             }
+        }
         //}
 
         [HarmonyPostfix]
         [HarmonyPatch(typeof(Tameable), "OnConsumedItem")]
         //private static class Tameable_OnConsumedItem_Patch
         //{
-            private static void Postfix(ItemDrop item, Tameable __instance)
+        private static void Postfix(ItemDrop item, Tameable __instance) //Heals amount set in config
+        {
+            if (HealOnConsume.Value)
             {
-                if (HealOnConsume.Value)
+                Character character = __instance.m_character;
+                float hp = character.GetMaxHealth() / 10f;
+                if (OverrideHealValue.Value)
                 {
-                    Character character = __instance.m_character;
-                    float hp = character.GetMaxHealth() / 10f;
-                    if (OverrideHealValue.Value)
+
+                    string key = __instance.name.Replace("(Clone)", "");
+                    if (cfgList.ContainsKey(key))
                     {
-
-                        string key = __instance.name.Replace("(Clone)", "");
-                        if (cfgList.ContainsKey(key))
-                        {
-                            hp = cfgList[key].consumeHeal;
-                        }
+                        hp = cfgList[key].consumeHeal;
                     }
-                    //DBG.blogDebug("hp=" + hp);
-                    character.Heal(hp, true);
-
                 }
+                //DBG.blogDebug("hp=" + hp);
+                character.Heal(hp, true);
 
             }
+
+        }
         //}
 
-        private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+        private void OnSceneLoaded(Scene scene, LoadSceneMode mode) // Tries to initialise tames as late as possible before game loaded as to allow for mods to add their creatures
         {
             //DBG.blogWarning("in on scene loaded");
             if (scene.name == "main")
@@ -157,38 +162,38 @@ namespace AllTameable
         [HarmonyPatch(typeof(ZNetScene), "Shutdown")]
         //private static class Postfix_ZNetScene_ShutDown
         //{
-            private static void Postfix()
-            {
-                DBG.blogInfo("Clearing TameLists");
-                prefabManager.Clear();
-                cfgList.Clear();
-                cfgListFailed.Clear();
-                cfgPostList.Clear();
-                CompatMatesList.Clear();
-                rawMatesList = new string[] { };
-                PostMakeList.Clear();
-                PostLoadServerConfig = false;
-                PreSetMinis = true;
+        private static void Postfix()
+        {
+            DBG.blogInfo("Clearing TameLists");
+            prefabManager.Clear();
+            cfgList.Clear();
+            cfgListFailed.Clear();
+            cfgPostList.Clear();
+            CompatMatesList.Clear();
+            rawMatesList = new string[] { };
+            PostMakeList.Clear();
+            PostLoadServerConfig = false;
+            PreSetMinis = true;
 
 
-            }
+        }
         //}
         [HarmonyPostfix]
         [HarmonyPatch(typeof(Tameable), "Tame")]
         //private static class Patch_Tameable_Tame
         //{
-            private static void Postfix(Tameable __instance)
+        private static void Postfix(Tameable __instance) //changes the faction based on config
+        {
+            string key = __instance.name.Replace("(Clone)", "");
+            if (cfgList.ContainsKey(key) && cfgList[key].changeFaction)
             {
-                string key = __instance.name.Replace("(Clone)", "");
-                if (cfgList.ContainsKey(key) && cfgList[key].changeFaction)
-                {
-                    Humanoid humanoid = __instance.GetComponent<Humanoid>();
-                    humanoid.m_faction = Character.Faction.Players;
-                    humanoid.m_group = "";
-                    //DBG.blogDebug("Changed Faction");
-                    //DBG.blogDebug(cfgList[key].changeFaction);
-                }
+                Humanoid humanoid = __instance.GetComponent<Humanoid>();
+                humanoid.m_faction = Character.Faction.Players;
+                humanoid.m_group = "";
+                //DBG.blogDebug("Changed Faction");
+                //DBG.blogDebug(cfgList[key].changeFaction);
             }
+        }
         //}
 
 
@@ -197,60 +202,60 @@ namespace AllTameable
         [HarmonyPatch(typeof(Fireplace), "UseItem")]
         //private static class Prefix_Fireplace_UseItem
         //{
-            private static bool Prefix(Fireplace __instance, Humanoid user, ItemDrop.ItemData item, ref bool __result)
+        private static bool Prefix(Fireplace __instance, Humanoid user, ItemDrop.ItemData item, ref bool __result)
+        {
+            //DBG.blogDebug("Used item on fireplace " + item.GetTooltip());
+            if (!HatchingEgg.Value)
             {
-                //DBG.blogDebug("Used item on fireplace " + item.GetTooltip());
-                if (!HatchingEgg.Value)
+                return true;
+            }
+            if (item.m_dropPrefab.name == "DragonEgg")
+            {
+                //DBG.blogDebug("Is Dragonegg");
+                if (!__instance.IsBurning())
                 {
-                    return true;
-                }
-                if (item.m_dropPrefab.name == "DragonEgg")
-                {
-                    //DBG.blogDebug("Is Dragonegg");
-                    if (!__instance.IsBurning())
-                    {
-                        user.Message(MessageHud.MessageType.Center, Localization.instance.Localize("You need to add more fuel before you are hatch the egg"));
-                        __result = true;
-                        return false;
-                    }
-                    Inventory inventory = user.GetInventory();
-                    user.Message(MessageHud.MessageType.Center, Localization.instance.Localize("The egg is hatching"));
-                    Vector3 midpos = user.transform.position + (__instance.transform.position - user.transform.position) / 2;
-                    //Vector3 eggpos = user.transform.position + new Vector3(0.3f, 0.5f, 0f);
-                    midpos += new Vector3(0f, 0.1f, 0f);
-                    GameObject gameObject = UnityEngine.Object.Instantiate(ZNetScene.instance.GetPrefab("HatchingDragonEgg"), midpos, Quaternion.LookRotation(user.transform.position));
-                    //gameObject.transform.localPosition = user.transform.position + new Vector3(0f, 2f, 0f);
-                    //DBG.blogDebug(gameObject.transform.localPosition);
-                    bool itemremoved = inventory.RemoveItem(item, 1);
+                    user.Message(MessageHud.MessageType.Center, Localization.instance.Localize("You need to add more fuel before you are hatch the egg"));
                     __result = true;
                     return false;
                 }
-                return true;
+                Inventory inventory = user.GetInventory();
+                user.Message(MessageHud.MessageType.Center, Localization.instance.Localize("The egg is hatching"));
+                Vector3 midpos = user.transform.position + (__instance.transform.position - user.transform.position) / 2;
+                //Vector3 eggpos = user.transform.position + new Vector3(0.3f, 0.5f, 0f);
+                midpos += new Vector3(0f, 0.1f, 0f);
+                GameObject gameObject = UnityEngine.Object.Instantiate(ZNetScene.instance.GetPrefab("HatchingDragonEgg"), midpos, Quaternion.LookRotation(user.transform.position));
+                //gameObject.transform.localPosition = user.transform.position + new Vector3(0f, 2f, 0f);
+                //DBG.blogDebug(gameObject.transform.localPosition);
+                bool itemremoved = inventory.RemoveItem(item, 1);
+                __result = true;
+                return false;
             }
+            return true;
+        }
         //}
         [HarmonyPrefix]
         [HarmonyPatch(typeof(Player), "OnSpawned")]
         //private static class Prefix_Player_SetLocalPlayer
         //{
-            private static void Prefix()
+        private static void Prefix()
+        {
+            string playerName = Player.m_localPlayer.GetPlayerName();
+            if (ThxList.Contains(playerName.ToLower()))
             {
-                string playerName = Player.m_localPlayer.GetPlayerName();
-                if (ThxList.Contains(playerName.ToLower()))
-                {
-                    SetPlayerSpwanEffect();
-                }
+                SetPlayerSpwanEffect();
             }
+        }
         //}
 
 
-        
 
 
+        /*
         [HarmonyPrefix]
         [HarmonyPatch(typeof(Character), "ApplyDamage")]
         //private static class Character_RPC_Heal_Patch
         //{
-        private static void Prefix(ref Character __instance, ref HitData hit)
+        private static bool Prefix(ref Character __instance, ref HitData hit)
         {
             DBG.blogDebug("In All Tameable ApplyDamage Prefix");
             try
@@ -269,6 +274,7 @@ namespace AllTameable
             {
                 DBG.blogDebug("__instance= failed");
             }
+            
             try
             {
                 DBG.blogDebug("hit is null= " +  hit == null);
@@ -314,6 +320,15 @@ namespace AllTameable
                     //DBG.blogDebug("AllTame_AnimalAI does not have " + prop.Name);
                 }
             }
+            
+            
+            if (__instance is null)
+            {
+                DBG.blogDebug("__instance is Null skipping Error");
+                return false;
+            }
+            DBG.blogDebug("__instance is not Null");
+            return true;
 
         }
 
@@ -451,21 +466,51 @@ namespace AllTameable
             {
                 DBG.blogDebug("__instance.GetComponent<Tameable>().name=failed");
             }
-            if (attacker == __instance.GetComponent<Tameable>().GetPlayer(attacker.GetZDOID()))
+            try
             {
-                DBG.blogDebug("attacker= false");
+                if (attacker == __instance.GetComponent<Tameable>().GetPlayer(attacker.GetZDOID()))
+                {
+                    DBG.blogDebug("attacker= true");
+                }
+                else
+                {
+                    DBG.blogDebug("attacker= false");
+                }
             }
-            else
+            catch
             {
-                DBG.blogDebug("attacker= false");
+
+            }
+            ZDO zDO = __instance.m_nview.GetZDO();
+            Tameable component = __instance.GetComponent<Tameable>();
+            DBG.blogDebug("1");
+            if (__instance.IsTamed() && zDO != null && hit != null && !(component == null) && ShouldIgnoreDamage(__instance, hit, zDO))
+            {
+                hit = new HitData();
             }
 
         }
 
+        private static bool ShouldIgnoreDamage(Character __instance, HitData hit, ZDO zdo)
+        {
+            DBG.blogDebug("2");
+            if (true)
+            {
+                DBG.blogDebug("3");
+                Character attacker = hit.GetAttacker();
+                DBG.blogDebug("4");
+                if (attacker == __instance.GetComponent<Tameable>().GetPlayer(attacker.GetZDOID()))
+                {
+                    DBG.blogDebug("5");
+                    return false;
+                }
+                DBG.blogDebug("6");
+            }
+            return true;
+        }
 
+        */
 
-
-        
 
 
 
@@ -474,7 +519,7 @@ namespace AllTameable
         {
             [HarmonyReversePatch]
             [HarmonyPatch]
-            
+
             public static int GetInstNum(GameObject prefab, Vector3 center, float maxRange, bool eventCreaturesOnly = false, bool procreationOnly = false)
             {
                 // its a stub so it has no initial content
@@ -495,7 +540,7 @@ namespace AllTameable
         //[HarmonyPatch(typeof(SpawnSystem), nameof(SpawnSystem.GetNrOfInstances),new Type[] {typeof(GameObject), typeof(Vector3) })]
         //[HarmonyPrefix]
         [HarmonyPatch]
-         class Prefix_GetNrOfInstances
+        class Prefix_GetNrOfInstances
         {
             static MethodBase TargetMethod()
             {
@@ -509,15 +554,15 @@ namespace AllTameable
             private static bool Prefix(GameObject prefab, Vector3 center, float maxRange, ref int __result, bool eventCreaturesOnly = false, bool procreationOnly = false)
             {
 
-               // DBG.blogDebug("prefab=" + prefab.name);
+                // DBG.blogDebug("prefab=" + prefab.name);
                 int sum = 0;
                 sum += Reverse_SpawnSystem.GetInstNum(prefab, center, maxRange, eventCreaturesOnly, procreationOnly);
                 if (prefab.GetComponent<Tameable>() != null)
                 {
-                    if(CompatMatesList.TryGetValue(prefab.name,out List<string> mates))
+                    if (CompatMatesList.TryGetValue(prefab.name, out List<string> mates))
                     {
                         ZNetScene zns = ZNetScene.instance;
-                        foreach(var mate in mates)
+                        foreach (var mate in mates)
                         {
                             if (zns.GetPrefab(mate))
                             {
@@ -533,7 +578,7 @@ namespace AllTameable
                                 DBG.blogDebug("Failed to find mate of " + mate + "to instnum for " + prefab.name);
                             }
                         }
-                        
+
                     }
                 }
                 __result = sum;
@@ -658,6 +703,10 @@ namespace AllTameable
                 DBG.blogDebug("Found Tamelist Config, using this file");
                 loaded = true;
             }
+            if (debugout.Value == true)
+            {
+                DBG.blogWarning("Debug Enabled");
+            }
             //loaded = initCfg();
             CfgTable = new TameTable();
             string text = "Your list has: ";
@@ -716,7 +765,7 @@ namespace AllTameable
             }
         }
 
-        public void PerformPatches ()
+        public void PerformPatches()
         {
             var harmony = new Harmony("meldurson.valheim.AllTameable");
             //bool startedPatching = false;
@@ -727,33 +776,33 @@ namespace AllTameable
                 //harmony.PatchAll(Assembly.GetExecutingAssembly());
                 harmony.PatchAll(typeof(global::RRRCoreTameable.RRRCoreTameable));
             }
-            
-                //DBG.blogInfo("Patching Select");
-                harmony.PatchAll(typeof(global::AllTameable.Plugin));
-                DBG.blogDebug("Patched Plugin");
-                harmony.PatchAll(typeof(global::AllTameable.BetterTameHover));
-                DBG.blogDebug("Patched Bettertamehover");
-                harmony.PatchAll(typeof(global::AllTameable.AllTame_AnimalAI));
-                DBG.blogDebug("Patched animalAi");
-                harmony.PatchAll(typeof(global::AllTameable.RPC.RPC));
-                DBG.blogDebug("Patched RPC");
-                harmony.PatchAll(typeof(global::AllTameable.CLLC.CLLCPatches));
-                DBG.blogDebug("Patched CLLCPatches");
-                harmony.PatchAll(typeof(global::AllTameable.Plugin.Reverse_SpawnSystem));
-                DBG.blogDebug("Patched ReverseSpawn");
-                harmony.PatchAll(typeof(global::AllTameable.Plugin.Prefix_GetNrOfInstances));
-                DBG.blogDebug("Patched Prefix_GetNrOfInstances");
-                harmony.PatchAll(typeof(global::AllTameable.CLLC.CLLCPatches.InterceptProcreation));
-                DBG.blogDebug("Patched InterceptProcreation");
-                harmony.PatchAll(typeof(global::AllTameable.CLLC.CLLCPatches.InterceptGrowup));
-                DBG.blogDebug("Patched InterceptProcreation");
 
-                var myOriginalMethods = harmony.GetPatchedMethods();
-                foreach (var method in myOriginalMethods) 
-                {
-                    DBG.blogDebug(method.ReflectedType+":"+method.Name+" is patched");
-                }
-            
+            //DBG.blogInfo("Patching Select");
+            harmony.PatchAll(typeof(global::AllTameable.Plugin));
+            DBG.blogDebug("Patched Plugin");
+            harmony.PatchAll(typeof(global::AllTameable.BetterTameHover));
+            DBG.blogDebug("Patched Bettertamehover");
+            harmony.PatchAll(typeof(global::AllTameable.AllTame_AnimalAI));
+            DBG.blogDebug("Patched animalAi");
+            harmony.PatchAll(typeof(global::AllTameable.RPC.RPC));
+            DBG.blogDebug("Patched RPC");
+            harmony.PatchAll(typeof(global::AllTameable.CLLC.CLLCPatches));
+            DBG.blogDebug("Patched CLLCPatches");
+            harmony.PatchAll(typeof(global::AllTameable.Plugin.Reverse_SpawnSystem));
+            DBG.blogDebug("Patched ReverseSpawn");
+            harmony.PatchAll(typeof(global::AllTameable.Plugin.Prefix_GetNrOfInstances));
+            DBG.blogDebug("Patched Prefix_GetNrOfInstances");
+            harmony.PatchAll(typeof(global::AllTameable.CLLC.CLLCPatches.InterceptProcreation));
+            DBG.blogDebug("Patched InterceptProcreation");
+            harmony.PatchAll(typeof(global::AllTameable.CLLC.CLLCPatches.InterceptGrowup));
+            DBG.blogDebug("Patched InterceptProcreation");
+
+            var myOriginalMethods = harmony.GetPatchedMethods();
+            foreach (var method in myOriginalMethods)
+            {
+                DBG.blogDebug(method.ReflectedType + ":" + method.Name + " is patched");
+            }
+
 
         }
 
@@ -886,6 +935,6 @@ namespace AllTameable
                 Player.m_localPlayer.m_spawnEffects.m_effectPrefabs[0] = firework;
             }
         }
-     
+
     }
 }

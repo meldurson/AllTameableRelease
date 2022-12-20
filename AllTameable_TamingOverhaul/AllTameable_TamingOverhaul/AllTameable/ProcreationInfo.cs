@@ -35,7 +35,7 @@ namespace AllTameable.CLLC
                 {
                     ParentStart();
                 }
-                
+
             }
 
         }
@@ -161,76 +161,76 @@ namespace AllTameable.CLLC
         {
             //try
             //{
-                mom_info = mother.gameObject.GetComponent<ProcreationInfo>();
-                mom_info.ParentStart();
+            mom_info = mother.gameObject.GetComponent<ProcreationInfo>();
+            mom_info.ParentStart();
 
-                CreatureExtraEffect mom_effect = API.GetExtraEffectCreature(mother);
-                CreatureInfusion mom_infusion = API.GetInfusionCreature(mother);
-                //ProcreationInfo mom_info = mother.gameObject.GetComponent<ProcreationInfo>();
-                int mom_lvl = mother.GetLevel();
+            CreatureExtraEffect mom_effect = API.GetExtraEffectCreature(mother);
+            CreatureInfusion mom_infusion = API.GetInfusionCreature(mother);
+            //ProcreationInfo mom_info = mother.gameObject.GetComponent<ProcreationInfo>();
+            int mom_lvl = mother.GetLevel();
 
-                dad_lvl = mom_info.dad_lvl;
-                dad_infusion = mom_info.dad_infusion;
-                dad_effect = mom_info.dad_effect;
+            dad_lvl = mom_info.dad_lvl;
+            dad_infusion = mom_info.dad_infusion;
+            dad_effect = mom_info.dad_effect;
 
-                //Test Level
-                level = mom_lvl;
-                if (Plugin.AllowMutation.Value && (UnityEngine.Random.Range(0, 100) < Plugin.MutationChance.Value))
-                {
-                    DBG.blogDebug("Has Mutation in Level");
-                    int min_lvl = Mathf.Max(Mathf.Min(mom_lvl, dad_lvl) - 1, 1);
-                    int max_lvl = Mathf.Max(mom_lvl, dad_lvl) + 1;
-                    //DBG.blogDebug("min=" + min_lvl + ", max=" + max_lvl);
-                    int rndm = Mathf.Min(100, UnityEngine.Random.Range(0, 100) + 10);
-                    //DBG.blogDebug("level_min=" + min_lvl + ", rndm=" + rndm + ", float=" + (float)(((float)min_lvl +(((float)rndm * ((float)max_lvl - (float)min_lvl)) / 100f))));
-                    level = min_lvl + Mathf.RoundToInt(((float)(rndm * (max_lvl - min_lvl))) / 100f);
+            //Test Level
+            level = mom_lvl;
+            if (Plugin.AllowMutation.Value && (UnityEngine.Random.Range(0, 100) < Plugin.MutationChance.Value))
+            {
+                DBG.blogDebug("Has Mutation in Level");
+                int min_lvl = Mathf.Max(Mathf.Min(mom_lvl, dad_lvl) - 1, 1);
+                int max_lvl = Mathf.Max(mom_lvl, dad_lvl) + 1;
+                //DBG.blogDebug("min=" + min_lvl + ", max=" + max_lvl);
+                int rndm = Mathf.Min(100, UnityEngine.Random.Range(0, 100) + 10);
+                //DBG.blogDebug("level_min=" + min_lvl + ", rndm=" + rndm + ", float=" + (float)(((float)min_lvl +(((float)rndm * ((float)max_lvl - (float)min_lvl)) / 100f))));
+                level = min_lvl + Mathf.RoundToInt(((float)(rndm * (max_lvl - min_lvl))) / 100f);
 
-                }
-                else if (UnityEngine.Random.Range(0, 100) > 50)
-                {
-                    //DBG.blogDebug("IsDadLvl");
-                    level = dad_lvl;
-                }
-                else
-                {
-                    //DBG.blogDebug("IsMomLvl");
-                }
-                newLevel = true;
+            }
+            else if (UnityEngine.Random.Range(0, 100) > 50)
+            {
+                //DBG.blogDebug("IsDadLvl");
+                level = dad_lvl;
+            }
+            else
+            {
+                //DBG.blogDebug("IsMomLvl");
+            }
+            newLevel = true;
 
-                if (API.IsInfusionEnabled())
-                {
-                    SetInfusion(mother);
-                }
-                else
-                {
-                    DBG.blogDebug("NoinfusionEnabled");
-                }
+            if (API.IsInfusionEnabled())
+            {
+                SetInfusion(mother);
+            }
+            else
+            {
+                DBG.blogDebug("NoinfusionEnabled");
+            }
 
-                if (API.IsExtraEffectEnabled())
-                {
-                    SetExtraEffect(mother);
-                }
-                else
-                {
-                    DBG.blogDebug("NoExtraEffectEnabled");
-                }
-                
-                /*
+            if (API.IsExtraEffectEnabled())
+            {
+                SetExtraEffect(mother);
+            }
+            else
+            {
+                DBG.blogDebug("NoExtraEffectEnabled");
+            }
+
+            /*
+        }
+        catch
+        {
+            try
+            {
+                DBG.blogDebug("Major failure of procreation");
+                level = mother.GetLevel();
             }
             catch
             {
-                try
-                {
-                    DBG.blogDebug("Major failure of procreation");
-                    level = mother.GetLevel();
-                }
-                catch
-                {
-                    DBG.blogDebug("Catastrophic failure of procreation");
-                    level = 0;
-                }
+                DBG.blogDebug("Catastrophic failure of procreation");
+                level = 0;
             }
-                */
+        }
+            */
 
         }
 
@@ -246,7 +246,7 @@ namespace AllTameable.CLLC
 
 
 
-     
+
         public void ParentStart()
         {
             Character partner = null;
@@ -255,18 +255,18 @@ namespace AllTameable.CLLC
             List<Character> characters = Character.GetAllCharacters();
             //DBG.blogDebug("This char is:" + baseai.gameObject.name);
             //List<string> possiblemates = Plugin.CompatMatesList[baseai.gameObject.name];
-            if (!Plugin.CompatMatesList.TryGetValue(Utils.GetPrefabName(baseai.gameObject),out var possiblemates))
+            if (!Plugin.CompatMatesList.TryGetValue(Utils.GetPrefabName(baseai.gameObject), out var possiblemates))
             {
                 possiblemates = new List<string> { Utils.GetPrefabName(baseai.gameObject) };
             }
             List<string> clonemates = new List<string>();
             ZNetScene zns = ZNetScene.instance;
             clonemates.Add(baseai.gameObject.name);
-            foreach(string str in possiblemates)
+            foreach (string str in possiblemates)
             {
                 clonemates.Add(str + "(Clone)");
             }
-           // DBG.blogDebug("clonemates= " + string.Join(":", clonemates));
+            // DBG.blogDebug("clonemates= " + string.Join(":", clonemates));
 
             foreach (Character character in characters)
             {

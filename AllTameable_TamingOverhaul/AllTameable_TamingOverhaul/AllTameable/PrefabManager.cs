@@ -42,7 +42,7 @@ namespace AllTameable
             tamestickConfig.AddRequirement(new RequirementConfig("Carrot", 1));
             tamestickConfig.AddRequirement(new RequirementConfig("Resin", 1));
 
-            CustomItem tamestick = new CustomItem(tametoolname, "Club",tamestickConfig);
+            CustomItem tamestick = new CustomItem(tametoolname, "Club", tamestickConfig);
             DBG.blogDebug("Adding TamingStick");
             ItemManager.Instance.AddItem(tamestick);
             Transform tameTransform = Jotunn.Managers.PrefabManager.Instance.GetPrefab(tametoolname).transform.Find("attach").transform;
@@ -103,7 +103,7 @@ namespace AllTameable
             }
 
             //RecipeReg();
-            
+
             GameObject prefab = Jotunn.Managers.PrefabManager.Instance.GetPrefab("MeadHealthMedium");
             GameObject go = Jotunn.Managers.PrefabManager.Instance.CreateClonedPrefab("AT_HealthEffect", prefab);
 

@@ -29,7 +29,7 @@ namespace AllTameable
 
         }
 
-        public static void Init2nd(GameObject init_go) //attempts to init tames that failed before spawning
+        public static void Init2nd(GameObject init_go) //attempts to init tames that failed before spawning, common with creatures added with mods
         {
             isInit2 = true;
             zns = ZNetScene.instance;
@@ -47,7 +47,7 @@ namespace AllTameable
                     if (Utils.GetPrefabName(init_go) == key)
                     {
                         AddTame(init_go, item.Value);
-                        DBG.blogDebug("Post Added First Spawn: "+init_go.name);
+                        DBG.blogDebug("Post Added First Spawn: " + init_go.name);
                     }
                     //Plugin.cfgListFailed.Remove(key);
                     succ += 1;
@@ -68,8 +68,8 @@ namespace AllTameable
             }
             List<string> LateSetMini = new List<string>(Plugin.PostMakeList);
             //DBG.blogDebug(string.Join(",", LateSetMini));
-            
-            foreach(string prefname in LateSetMini)
+
+            foreach (string prefname in LateSetMini)
             {
                 GameObject go = zns.GetPrefab(prefname);
                 Procreation proc = go.GetComponent<Procreation>();
@@ -104,7 +104,7 @@ namespace AllTameable
                 else
                 {
                     Plugin.PostLoadServerConfig = true;
-                    DBG.blogDebug("failed to find prefab:" + key+", will attempt to load later");
+                    DBG.blogDebug("failed to find prefab:" + key + ", will attempt to load later");
                     Plugin.cfgListFailed.Add(key, item.Value);
                 }
 
@@ -114,9 +114,9 @@ namespace AllTameable
             DBG.blogInfo("Succesfully Loaded Config from server");
         }
 
-        public static void FixAnimalAI(GameObject go)
+        public static void FixAnimalAI(GameObject go) // Tameable is only available with MonsterAI, Creates new AI from MonsterAI and then Copies AI from Animal AI
         {
-            if (go.GetComponent<AllTame_AnimalAI>()==null)
+            if (go.GetComponent<AllTame_AnimalAI>() == null)
             {
                 DBG.blogDebug("Fixing AI for " + go.name);
                 zns = ZNetScene.instance;
@@ -287,7 +287,7 @@ namespace AllTameable
             {
                 InitDrakeEgg();
             }
-            
+
 
             //FixDeerAI();
             Dictionary<string, Plugin.TameTable> cfgList = Plugin.cfgList;
@@ -339,7 +339,7 @@ namespace AllTameable
                         //configManager.debugInfo = configManager.debugInfo + go.name + " can't be added,Remove it in your cfg   ";
                         return;
                     }
-                    
+
                 }
                 if (tb.tamingTime == -1)
                 {
@@ -392,7 +392,7 @@ namespace AllTameable
                     component2.m_consumeItems.Clear();
                 }
                 component2.m_consumeItems = new List<ItemDrop> { };
-                
+
                 foreach (string item in array2)
                 {
                     list.Add(item);
@@ -415,7 +415,7 @@ namespace AllTameable
                     }
                 }
                 else { DBG.blogDebug("Cannot be tamed by food"); }
-                
+
                 if (tb.procretion)
                 {
                     //DBG.blogDebug("has procreation");
@@ -444,9 +444,9 @@ namespace AllTameable
                     }
                     else if ((go.name == "Seeker" | go.name == "SeekerBrute") && Plugin.SeekerBroodOffspring.Value)
                     {
-                        DBG.blogDebug("Setting "+ go.name + " Offspring to Seeker Brood");
+                        DBG.blogDebug("Setting " + go.name + " Offspring to Seeker Brood");
                         component3.m_offspring = zns.GetPrefab("SeekerBrood");
-                        
+
                         if (component3.m_offspring.GetComponent<Tameable>() == null)
                         {
                             DBG.blogDebug("Making Seeker Brood only tameable by offspring");
@@ -455,7 +455,7 @@ namespace AllTameable
                             Plugin.TameTable seekerbrood_tamtetable = TameListCfg.ArrToTametable(arr);
                             AddTame(component3.m_offspring, seekerbrood_tamtetable);
                         }
-                        
+
                     }
                     else
                     {
@@ -504,8 +504,8 @@ namespace AllTameable
                 if (RRRCoreTameable.RRRCoreTameable.CheckHuman(prefab))
                 {
                     //DBG.blogDebug("isHuman");
-                    if (Plugin.PreSetMinis) 
-                    { 
+                    if (Plugin.PreSetMinis)
+                    {
                         Plugin.PostMakeList.Add(text);
                         gameObject = RRRCoreTameable.RRRCoreTameable.HotFixHuman(gameObject);
                         //gameObject  = Object.Instantiate(zns.GetPrefab("RRR_NPC"), Root.transform);
@@ -516,19 +516,19 @@ namespace AllTameable
                         DBG.blogDebug("Set clone of prefab in mini for " + text);
                         Plugin.PostMakeList.Remove(text);
                     }
-                    
+
                 }
             }
             string NamePrefix;
-            if (!isHuman){NamePrefix = "Mini"; }
-            else{NamePrefix = "Child";}
+            if (!isHuman) { NamePrefix = "Mini"; }
+            else { NamePrefix = "Child"; }
 
             gameObject.name = "Mini" + text;
             //DBG.blogDebug(gameObject.name);
             gameObject.transform.localScale *= 0.5f;
             if (gameObject.GetComponent<Humanoid>() != null)
             {
-                gameObject.GetComponent<Humanoid>().m_name = NamePrefix+ " " + gameObject.GetComponent<Humanoid>().m_name;
+                gameObject.GetComponent<Humanoid>().m_name = NamePrefix + " " + gameObject.GetComponent<Humanoid>().m_name;
             }
             else
             {
@@ -542,7 +542,7 @@ namespace AllTameable
             {
                 Object.DestroyImmediate(gameObject.GetComponent<VisEquipment>());
             }
-            if (gameObject.GetComponent<CharacterDrop>() != null )
+            if (gameObject.GetComponent<CharacterDrop>() != null)
             {
                 Object.DestroyImmediate(gameObject.GetComponent<CharacterDrop>());
             }
@@ -560,7 +560,7 @@ namespace AllTameable
             Growup growup = gameObject.AddComponent<Growup>();
             growup.m_grownPrefab = zns.GetPrefab(text);
             growup.m_growTime = Plugin.cfgList[text].growTime;
-            
+
             if (!Plugin.PreSetMinis)
             {
                 string name = gameObject.name;

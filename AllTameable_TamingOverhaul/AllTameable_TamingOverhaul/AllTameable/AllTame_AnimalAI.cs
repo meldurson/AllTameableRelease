@@ -17,8 +17,8 @@ namespace AllTameable
         //private static class Prefix_MonsterAI_UpdateAI
         //{
 
-            private static bool Prefix(AllTame_AnimalAI __instance, float dt)
-            {
+            private static bool Prefix(AllTame_AnimalAI __instance, float dt) //Hijacks Monster AI and if AllTame_AnimalAI then perform custom AI and skip orignial AI
+        {
                 if (typeof(AllTame_AnimalAI) == __instance.GetType())
                 {
                     __instance.UpdateAI_AllTameable(dt);
@@ -30,7 +30,7 @@ namespace AllTameable
             }
         //}
 
-        private void UpdateAI_AllTameable(float dt)
+        private void UpdateAI_AllTameable(float dt) 
         {
 
             if (m_nview.IsOwner())
