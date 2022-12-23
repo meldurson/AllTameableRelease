@@ -374,9 +374,24 @@ namespace AllTameable
                     }
                 }
 
-                component.m_petEffect = wtame.m_petEffect;
+                //Change pet (follow) sound if dverger
+                if (go.name.ToLower().IndexOf("dverger") > -1)
+                {
+                    //DBG.blogWarning("changing dverger effect:" + go.name);
+                    component.m_petEffect = new EffectList();
+                    EffectList.EffectData[] ea = { new EffectList.EffectData() };
+                    component.m_petEffect.m_effectPrefabs = ea;
+                    component.m_petEffect.m_effectPrefabs[0].m_prefab = ZNetScene.instance.GetPrefab("sfx_dverger_vo_alerted");
+
+                }
+                else
+                {
+                    component.m_petEffect = wtame.m_petEffect;
+                }
+
+
                 component.m_sootheEffect = wtame.m_sootheEffect;
-                component.m_petEffect = wtame.m_petEffect;
+                //component.m_petEffect = wtame.m_petEffect;
                 component.m_commandable = tb.commandable;
                 component.m_tamingTime = tb.tamingTime;
                 component.m_fedDuration = tb.fedDuration;

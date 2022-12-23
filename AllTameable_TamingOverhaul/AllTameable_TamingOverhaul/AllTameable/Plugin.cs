@@ -136,6 +136,29 @@ namespace AllTameable
         }
         //}
 
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(Tameable), "Interact")]
+        private static void Postfix(Humanoid user, bool hold, bool alt, Tameable __instance) 
+        {
+            //Show some dialog when an Talking NPC follows the player.
+            NpcTalk talk = ((Component)__instance.m_character).GetComponent<NpcTalk>();
+            if (talk != null)
+            {
+                var monsterAI = __instance.GetComponentInParent<MonsterAI>();
+                if (monsterAI != null)
+                {
+                    if (monsterAI.GetFollowTarget() != null)
+                    {
+                        talk.QueueSay(new List<string>() { "Where to boss?", "Lets do it!" }, "Greet", null);
+                    }
+                    else
+                    {
+                        talk.QueueSay(new List<string>() { "Waiting here.", "Guarding." }, "Talk", null);
+                    }
+                }
+            }
+        }
+
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode) // Tries to initialise tames as late as possible before game loaded as to allow for mods to add their creatures
         {
             //DBG.blogWarning("in on scene loaded");
