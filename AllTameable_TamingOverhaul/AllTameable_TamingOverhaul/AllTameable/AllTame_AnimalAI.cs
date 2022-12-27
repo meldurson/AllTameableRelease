@@ -17,17 +17,17 @@ namespace AllTameable
         //private static class Prefix_MonsterAI_UpdateAI
         //{
 
-            private static bool Prefix(AllTame_AnimalAI __instance, float dt) //Hijacks Monster AI and if AllTame_AnimalAI then perform custom AI and skip orignial AI
+        private static bool Prefix(AllTame_AnimalAI __instance, float dt) //Hijacks Monster AI and if AllTame_AnimalAI then perform custom AI and skip orignial AI
         {
-                if (typeof(AllTame_AnimalAI) == __instance.GetType())
-                {
-                    __instance.UpdateAI_AllTameable(dt);
-                    //DBG.blogDebug("AllTame");
-                    return false;
-                }
-                //DBG.blogDebug("Not AllTame");
-                return true;
+            if (typeof(AllTame_AnimalAI) == __instance.GetType())
+            {
+                __instance.UpdateAI_AllTameable(dt);
+                //DBG.blogDebug("AllTame");
+                return false;
             }
+            //DBG.blogDebug("Not AllTame");
+            return true;
+        }
         //}
 
         private void UpdateAI_AllTameable(float dt) 
@@ -99,7 +99,7 @@ namespace AllTameable
                 if ((bool)m_targetCreature)
                 {
                     Flee(dt, m_targetCreature.transform.position);
-                    m_targetCreature.OnTargeted(sensed: false, alerted: false);
+                    m_targetCreature.OnTargeted(sensed: false, alerted: false); 
                 }
                 else if ((!IsAlerted() || (m_targetStatic == null && m_targetCreature == null)) && UpdateConsumeItem(humanoid, dt))
                 {

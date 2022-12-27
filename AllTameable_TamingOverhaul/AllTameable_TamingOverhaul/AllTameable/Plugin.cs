@@ -72,7 +72,7 @@ namespace AllTameable
         //}
 
 
-        
+
 
         [HarmonyPrefix]
         [HarmonyPatch(typeof(Character), "RPC_Heal")] //removes healing 0 text if healing less than 0.1hp
@@ -645,33 +645,50 @@ namespace AllTameable
             }
             private static bool Prefix(GameObject prefab, Vector3 center, float maxRange, ref int __result, bool eventCreaturesOnly = false, bool procreationOnly = false)
             {
-
+                //DBG.blogDebug("Starting InstNum Prefix for "+prefab.name);
                 // DBG.blogDebug("prefab=" + prefab.name);
                 int sum = 0;
-                sum += Reverse_SpawnSystem.GetInstNum(prefab, center, maxRange, eventCreaturesOnly, procreationOnly);
+                try
+                {
+                    
+                    sum += Reverse_SpawnSystem.GetInstNum(prefab, center, maxRange, eventCreaturesOnly, procreationOnly);
+                }
+                catch
+                {
+                    DBG.blogDebug("ERROR: Failed initial GetInstNum");
+                } //if fails do not add
                 if (prefab.GetComponent<Tameable>() != null)
                 {
-                    if (CompatMatesList.TryGetValue(prefab.name, out List<string> mates))
+                    try
                     {
-                        ZNetScene zns = ZNetScene.instance;
-                        foreach (var mate in mates)
+                        if (CompatMatesList.TryGetValue(prefab.name, out List<string> mates))
                         {
-                            if (zns.GetPrefab(mate))
+                            ZNetScene zns = ZNetScene.instance;
+                            foreach (var mate in mates)
                             {
-                                int added = Reverse_SpawnSystem.GetInstNum(zns.GetPrefab(mate), center, maxRange, eventCreaturesOnly, procreationOnly);
-                                if (added > 0)
+                                if (zns.GetPrefab(mate))
                                 {
-                                    //DBG.blogDebug("Added " + added + " of " + mate + "to instnum for " + prefab.name);
+                                    int added = 0;
+                                    try
+                                    {
+                                        added = Reverse_SpawnSystem.GetInstNum(zns.GetPrefab(mate), center, maxRange, eventCreaturesOnly, procreationOnly);
+                                    }
+                                    catch{added = 0;} //if fails do not add
+                                    if (added > 0)
+                                    {
+                                        //DBG.blogDebug("Added " + added + " of " + mate + "to instnum for " + prefab.name);
+                                    }
+                                    sum += added;
                                 }
-                                sum += added;
+                                else
+                                {
+                                    DBG.blogDebug("Failed to find mate of " + mate + "to instnum for " + prefab.name);
+                                }
                             }
-                            else
-                            {
-                                DBG.blogDebug("Failed to find mate of " + mate + "to instnum for " + prefab.name);
-                            }
-                        }
 
+                        }
                     }
+                    catch { DBG.blogDebug("Error in finding mate for " + prefab.name); }
                 }
                 __result = sum;
                 return false;
