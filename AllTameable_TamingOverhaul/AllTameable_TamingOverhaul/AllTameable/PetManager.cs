@@ -19,6 +19,7 @@ namespace AllTameable
         public static bool isInit;
         public static bool isInit2;
         public static bool fixedDeerAI;
+        public static GameObject heartEffectGO;
 
         public static GameObject DragonEgg;
 
@@ -287,6 +288,17 @@ namespace AllTameable
             {
                 InitDrakeEgg();
             }
+            DBG.blogDebug("Making HeartEffect");
+            heartEffectGO = Object.Instantiate(wtame.m_petEffect.m_effectPrefabs[0].m_prefab, Root.transform);
+            DBG.blogDebug("removing child");
+            heartEffectGO.transform.GetChild(1).parent = null;
+            DBG.blogDebug("Creating new effect");
+            EffectList.EffectData effectData2 = new EffectList.EffectData();
+            DBG.blogDebug("setting prefab to go");
+            effectData2.m_prefab = heartEffectGO;
+            DBG.blogDebug("Created HeartEffect");
+
+
 
 
             //FixDeerAI();
@@ -386,12 +398,38 @@ namespace AllTameable
                 }
                 else
                 {
-                    component.m_petEffect = wtame.m_petEffect;
+                    int i = 0;
+                    string effectlist = "Effect List: ";
+                    EffectList.EffectData[] NewEffectList = new EffectList.EffectData[10];
+                    EffectList.EffectData[] idleEffects = component2.m_idleSound.m_effectPrefabs;
+                    foreach (EffectList.EffectData effectData in idleEffects)
+                    {
+                        try
+                        {
+                            effectlist += i + ":" + effectData.m_prefab.name;
+                            NewEffectList[i] = effectData;
+                        }
+                        catch{}
+                        i++;
+                    }
+                    //DBG.blogDebug(effectlist);
+                    int numEffects = i;
+                    if (component2.m_idleSound.m_effectPrefabs.Length != 0)
+                    {
+                        EffectList.EffectData hearEffect = new EffectList.EffectData();
+                        hearEffect.m_prefab = heartEffectGO;
+                        NewEffectList[numEffects] = hearEffect;
+                        System.Array.Resize(ref NewEffectList, numEffects + 1);
+                        component.m_petEffect.m_effectPrefabs = NewEffectList;
+                    }
+                    else
+                    {
+                        component.m_petEffect = wtame.m_petEffect;
+                    }
                 }
 
 
                 component.m_sootheEffect = wtame.m_sootheEffect;
-                //component.m_petEffect = wtame.m_petEffect;
                 component.m_commandable = tb.commandable;
                 component.m_tamingTime = tb.tamingTime;
                 component.m_fedDuration = tb.fedDuration;
