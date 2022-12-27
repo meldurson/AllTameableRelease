@@ -5,6 +5,8 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Collections;
+using System.Globalization;
 
 namespace AllTameable
 {
@@ -159,6 +161,7 @@ namespace AllTameable
             catch
             {
             }
+            /*
             tmtbl = arr.Select(Array => new Plugin.TameTable
             {
                 commandable = (arr[1] == "true")
@@ -190,6 +193,31 @@ namespace AllTameable
                 growTime = float.Parse(arr[14])
 
             }).ToList()[0];
+            */
+            
+            tmtbl = new Plugin.TameTable();
+            String strFailed = "Failed Setting: ";
+            String strbase = strFailed;
+            try { tmtbl.commandable = (arr[1] == "true"); } catch { strFailed += "commandable, "; }
+            try { tmtbl.tamingTime = float.Parse(arr[2]); } catch { strFailed += "tamingtime, "; }
+            try { tmtbl.fedDuration = float.Parse(arr[3]); } catch { strFailed += "fedduration, "; }
+            try { tmtbl.consumeRange = float.Parse(arr[4]); } catch { strFailed += "consumerange, "; }
+            try { tmtbl.consumeSearchInterval = float.Parse(arr[5]); } catch { strFailed += "consumesearchinterval, "; }
+            try { tmtbl.consumeHeal = float.Parse(arr[6]); } catch { strFailed += "consumeheal, "; }
+            try { tmtbl.consumeSearchRange = float.Parse(arr[7]); } catch { strFailed += "consumesearchrange, "; }
+            try { tmtbl.consumeItems = arr[8]; } catch { strFailed += "consumeitems, "; }
+            try { tmtbl.changeFaction = (arr[9] == "true"); } catch { strFailed += "changefaction, "; }
+            try { tmtbl.procretion = (arr[10] == "true"); } catch { strFailed += "procreation, "; }
+            try { tmtbl.maxCreatures = (int.Parse(arr[11])); } catch { strFailed += "tamingtime, "; }
+            try { tmtbl.pregnancyChance = float.Parse(arr[12], CultureInfo.InvariantCulture.NumberFormat); } 
+            catch { strFailed += "pregchance, "; }
+            try { tmtbl.pregnancyDuration = float.Parse(arr[13]); } catch { strFailed += "changefaction, "; }
+            try { tmtbl.growTime = float.Parse(arr[14]); } catch { strFailed += "procreation, "; }
+            if (strFailed != strbase)
+            {
+                DBG.blogDebug(arr[0] + ": "+ strFailed);
+            }
+
             return tmtbl;
         }
     }
