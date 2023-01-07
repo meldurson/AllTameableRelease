@@ -104,6 +104,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="UnusedFiles\InManager.cs" />
+    <Compile Include="AllTameable\AllTame_Interactable.cs" />
     <Compile Include="AllTameable\CfgPackage.cs" />
     <None Include="AllTameable\RRRNPatches - Backup.cs" />
     <None Include="AllTameable\RRRNPatchesTemplate.cs" />

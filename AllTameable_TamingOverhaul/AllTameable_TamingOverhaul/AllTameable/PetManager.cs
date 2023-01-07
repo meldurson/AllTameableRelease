@@ -298,7 +298,15 @@ namespace AllTameable
             effectData2.m_prefab = heartEffectGO;
             DBG.blogDebug("Created HeartEffect");
 
-
+            foreach (KeyValuePair<string, List<TradeAmount>> item in Plugin.RecruitList)
+            {
+                string list_items = "";
+                foreach(TradeAmount td_amt in item.Value)
+                {
+                    list_items += td_amt.tradeItem + "=" + td_amt.tradeAmt+ ";";
+                }
+                DBG.blogDebug("Trades: "+item.Key +": "+ list_items);
+            }
 
 
             //FixDeerAI();
@@ -367,6 +375,14 @@ namespace AllTameable
                     return;
 
                 }
+                if (tb.tamingTime == -2)
+                {
+                    DBG.blogDebug("Setting Only Tradeable for  " + go.name);
+                    if (go.GetComponent<Procreation>() != null)
+                    {
+                        Object.DestroyImmediate(go.GetComponent<Procreation>());
+                    }
+                }
                 if (!go.TryGetComponent<Tameable>(out var component))
                 {
                     component = go.AddComponent<Tameable>();
@@ -386,6 +402,42 @@ namespace AllTameable
                     }
                 }
 
+
+                if (Plugin.RecruitList.TryGetValue(go.name, out List<TradeAmount> tradelist))
+                {
+                    DBG.blogDebug("Found RecruitList");
+                    if (!go.TryGetComponent<AllTame_Interactable>(out var AT_Int))
+                    {
+                        DBG.blogDebug("Adding ATI");
+                        AT_Int = go.AddComponent<AllTame_Interactable>();
+                        DBG.blogDebug("Added ATI");
+
+                    }
+
+                    int i = 0;
+                    string tradelist_str = go.name + " trades:";
+                    foreach (TradeAmount td_amt in tradelist)
+                    {
+                        GameObject itemPrefab = ObjectDB.instance.GetItemPrefab(td_amt.tradeItem);
+                        
+                        if (itemPrefab == null)
+                        {
+                            DBG.blogWarning("Wrong item name " + td_amt.tradeItem);
+                        }
+                        else
+                        {
+                            AT_Int.tradeItems[i] = itemPrefab.name;
+                            AT_Int.tradeAmounts[i] = td_amt.tradeAmt;
+                            tradelist_str += td_amt.tradeItem + ", " + td_amt.tradeAmt + "; ";
+                        }
+                        i++;
+                    }
+                    DBG.blogDebug(tradelist_str);
+                    System.Array.Resize(ref AT_Int.tradeItems, tradelist.Count);
+                    System.Array.Resize(ref AT_Int.tradeAmounts, tradelist.Count);
+                }
+                
+
                 //Change pet (follow) sound if dverger
                 if (go.name.ToLower().IndexOf("dverger") > -1)
                 {
@@ -394,7 +446,6 @@ namespace AllTameable
                     EffectList.EffectData[] ea = { new EffectList.EffectData() };
                     component.m_petEffect.m_effectPrefabs = ea;
                     component.m_petEffect.m_effectPrefabs[0].m_prefab = ZNetScene.instance.GetPrefab("sfx_dverger_vo_alerted");
-
                 }
                 else
                 {
@@ -414,6 +465,7 @@ namespace AllTameable
                     }
                     //DBG.blogDebug(effectlist);
                     int numEffects = i;
+                    numEffects = idleEffects.Length;
                     if (component2.m_idleSound.m_effectPrefabs.Length != 0)
                     {
                         EffectList.EffectData hearEffect = new EffectList.EffectData();
@@ -427,6 +479,9 @@ namespace AllTameable
                         component.m_petEffect = wtame.m_petEffect;
                     }
                 }
+
+                
+
 
 
                 component.m_sootheEffect = wtame.m_sootheEffect;
@@ -481,15 +536,15 @@ namespace AllTameable
                     component3.m_maxCreatures = tb.maxCreatures * 2;
                     component3.m_pregnancyChance = tb.pregnancyChance;
                     if (component3.m_pregnancyChance > 1) { component3.m_pregnancyChance *= 0.01f; }
+                    if (component3.m_pregnancyChance > 1) { component3.m_pregnancyChance =0.66f; }
                     component3.m_pregnancyDuration = tb.pregnancyDuration;
                     component3.m_partnerCheckRange = 30f;
                     component3.m_totalCheckRange = 30f;
                     if (flag && component3.m_offspring != null && !Plugin.CheckHuman(go))
                     {
-                        //DBG.blogDebug("already has offspring");
-
                         Growup component4 = component3.m_offspring.GetComponent<Growup>();
                         component4.m_growTime = tb.growTime;
+                        DBG.blogDebug(go.name + " already has offspring, modified tameable");
                     }
                     else if (go.name == "Hatchling" && Plugin.HatchingEgg.Value)
                     {
@@ -530,10 +585,7 @@ namespace AllTameable
                     DBG.blogDebug("Added ability to tame to " + go.name);
                 }
             }
-            catch
-            {
-                DBG.blogWarning("Failed to add tame to prefab: " + go.name + ", Make sure config files are formatted correctly");
-            }
+            catch{DBG.blogWarning("Failed to add tame to prefab: " + go.name + ", Make sure config files are formatted correctly");}
         }
 
         private static GameObject SpawnMini(GameObject prefab)

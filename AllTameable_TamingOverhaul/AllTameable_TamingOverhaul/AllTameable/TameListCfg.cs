@@ -148,12 +148,28 @@ namespace AllTameable
         public static Plugin.TameTable ArrToTametable(string[] arr)
         {
             Plugin.TameTable tmtbl;
-            try
+            try 
             {
                 if (float.Parse(arr[1]) == -1)
                 {
                     tmtbl = arr.Select(Array => new Plugin.TameTable
                     { tamingTime = float.Parse(arr[1]) }).ToList()[0];
+                    return tmtbl;
+                }
+
+            }
+            catch
+            {
+            }
+            try
+            {
+                if (arr[1].ToLower() == "trade")
+                {
+                    tmtbl = new Plugin.TameTable();
+                    tmtbl.tamingTime = -2;
+                    tmtbl.consumeItems = "";
+                    tmtbl.procretion = false;
+                    AddTradeList(arr[0],arr[2]);
                     return tmtbl;
                 }
 
@@ -194,11 +210,12 @@ namespace AllTameable
 
             }).ToList()[0];
             */
-            
+
             tmtbl = new Plugin.TameTable();
             String strFailed = "Failed Setting: ";
             String strbase = strFailed;
-            try { tmtbl.commandable = (arr[1] == "true"); } catch { strFailed += "commandable, "; }
+            try { tmtbl.commandable = (arr[1] != "false"); } catch { strFailed += "commandable, "; }
+            
             try { tmtbl.tamingTime = float.Parse(arr[2]); } catch { strFailed += "tamingtime, "; }
             try { tmtbl.fedDuration = float.Parse(arr[3]); } catch { strFailed += "fedduration, "; }
             try { tmtbl.consumeRange = float.Parse(arr[4]); } catch { strFailed += "consumerange, "; }
@@ -213,12 +230,54 @@ namespace AllTameable
             catch { strFailed += "pregchance, "; }
             try { tmtbl.pregnancyDuration = float.Parse(arr[13]); } catch { strFailed += "changefaction, "; }
             try { tmtbl.growTime = float.Parse(arr[14]); } catch { strFailed += "procreation, "; }
+            if (!isValidBool(arr[1])) { strFailed += "commandable(not true or false), "; }
+            if (!isValidBool(arr[9])) { strFailed += "changeFaction(not true or false), "; }
+            if (!isValidBool(arr[10])) { strFailed += "procretion(not true or false), "; }
             if (strFailed != strbase)
             {
-                DBG.blogDebug(arr[0] + ": "+ strFailed);
+                DBG.blogWarning(arr[0] + ": "+ strFailed);
             }
 
             return tmtbl;
+        }
+
+        public static bool isValidBool(string bool_str)
+        {
+            if (bool_str == "true" | bool_str == "false")
+            {
+                return true;
+            }
+            return false;
+        }
+
+        public static void AddTradeList(string creaturename, string rawstr)
+        {
+            string[] trade_combined = rawstr.Split(':');
+            string[] split_trade;
+            List<TradeAmount> trdList = new List<TradeAmount>();
+            foreach ( string str_group in trade_combined)
+            {
+                split_trade = str_group.Split('=');
+                DBG.blogDebug(split_trade[0] + " with amount of " + split_trade[1]);
+                TradeAmount trdAmt = new TradeAmount();
+                trdAmt.tradeItem = split_trade[0];
+                try { trdAmt.tradeAmt = (int.Parse(split_trade[1])); } catch {
+                    trdAmt.tradeAmt = 1;
+                    DBG.blogWarning(split_trade[1] +" is not a valid amount for trade, setting amount to 1"); }
+                trdList.Add(trdAmt);
+            }
+            string[] prefablist = SplitMates(creaturename);
+            for (int i = 0; i < prefablist.Count(); i++)
+            {
+                if (!Plugin.RecruitList.ContainsKey(prefablist[i]))
+                {
+                    Plugin.RecruitList.Add(prefablist[i], trdList);
+                }
+                else
+                {
+                    DBG.blogWarning("Already tradelist set for "+prefablist[i]);
+                }
+            }
         }
     }
 }

@@ -3,22 +3,18 @@ using BepInEx.Bootstrap;
 using BepInEx.Configuration;
 using BepInEx.Logging;
 using HarmonyLib;
-using Jotunn;
-using Steamworks;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using System.Diagnostics;
 
 
 namespace AllTameable
 {
-    [BepInPlugin("meldurson.valheim.AllTameable", "AllTameable-Overhaul", "1.1.1")]
+    [BepInPlugin("meldurson.valheim.AllTameable", "AllTameable-Overhaul", "1.1.2")]
 
     [BepInDependency("com.jotunn.jotunn", BepInDependency.DependencyFlags.HardDependency)]
     [BepInDependency("org.bepinex.plugins.creaturelevelcontrol", BepInDependency.DependencyFlags.SoftDependency)]
@@ -47,6 +43,10 @@ namespace AllTameable
                 return MemberwiseClone();
             }
         }
+
+       
+
+
 
         [HarmonyPrefix]
         [HarmonyPatch(typeof(MonsterAI), "Awake")]
@@ -276,337 +276,363 @@ namespace AllTameable
         }
         //}
 
-
-        //*************Testing Recruiting*****************
-        [HarmonyPrefix]
-        [HarmonyPatch(typeof(Tameable), "Interact")]
+        //Patch TameableUseItem to go to AllTame_Interactable if not implimented
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(Tameable), "UseItem")]
         //private static class Prefix_Player_SetLocalPlayer
         //{
-        private static void Prefix(Tameable __instance, Humanoid user, bool hold, bool alt)
+        private static void Postfix_Tameable_UseItem(Tameable __instance, Humanoid user, ItemDrop.ItemData item, ref bool __result)
         {
-            DBG.blogDebug("in Interact prefix");
-            DBG.blogDebug("__instance=" + __instance);
-            DBG.blogDebug("alt=" + alt);
-
+            if (!__result)
+            {
+                Interactable alltame_interact = __instance.gameObject.GetComponentInParent<AllTameable.AllTame_Interactable>();
+                if (alltame_interact != null && alltame_interact.UseItem(user, item))
+                {
+                    //DBG.blogDebug("GotType");
+                    __result = true;
+                    return;
+                }
+            }
         }
 
-        [HarmonyPrefix]
-        [HarmonyPatch(typeof(Humanoid), "UseItem")]
-        //private static class Prefix_Player_SetLocalPlayer
-        //{
-        private static void Prefix(Humanoid __instance, Inventory inventory, ItemDrop.ItemData item, bool fromInventoryGui)
-        {
-            try
-            {
-                int costtoRecruit = 5;
-                DBG.blogDebug("in UseItem prefix");
-                DBG.blogDebug("__instance=" + __instance);
-                GameObject hoverObject = __instance.GetHoverObject(); //get go that looking at
-                Humanoid hoverCreature = hoverObject.GetComponent<Humanoid>(); //get the humanoid
-                Inventory inv2 = __instance.GetInventory(); //get players inventory
-                DBG.blogDebug("item.m_dropPrefab.name=" + item.m_dropPrefab.name); //item using
-                if (item.m_dropPrefab.name == "BlackCore")
-                {
-                    int numininventory = inv2.CountItems(item.m_shared.m_name); // checks how many cores player has
-                    DBG.blogDebug("Number of " + item.m_dropPrefab.name + " is " + numininventory);
-                    if (numininventory >= costtoRecruit)
-                    {
-                        DBG.blogDebug("Attempting Trade");
-                        if (!hoverCreature.IsTamed())
-                        {
-                            Tameable tame = new Tameable();
-                            tame = hoverCreature.gameObject.GetComponent<Tameable>();
 
-                            if (tame != null)
+            //*************Testing Recruiting*****************
+            /*
+            [HarmonyPrefix]
+            [HarmonyPatch(typeof(Tameable), "Interact")]
+            //private static class Prefix_Player_SetLocalPlayer
+            //{
+            private static void Prefix(Tameable __instance, Humanoid user, bool hold, bool alt)
+            {
+                DBG.blogDebug("in Interact prefix");
+                DBG.blogDebug("__instance=" + __instance);
+                DBG.blogDebug("alt=" + alt);
+            }
+            */
+
+
+
+
+            //*****Moved to AllTame_Interactable.cs*****
+
+            /*
+            [HarmonyPrefix]
+            [HarmonyPatch(typeof(Humanoid), "UseItem")]
+            //private static class Prefix_Player_SetLocalPlayer
+            //{
+            private static void Prefix(Humanoid __instance, Inventory inventory, ItemDrop.ItemData item, bool fromInventoryGui)
+            {
+                try
+                {
+                    int costtoRecruit = 5;
+                    //DBG.blogDebug("in UseItem prefix");
+                    //DBG.blogDebug("__instance=" + __instance);
+                    GameObject hoverObject = __instance.GetHoverObject(); //get go that looking at
+                    Humanoid hoverCreature = hoverObject.GetComponent<Humanoid>(); //get the humanoid
+                    Inventory inv2 = __instance.GetInventory(); //get players inventory
+                    DBG.blogDebug("item.m_dropPrefab.name=" + item.m_dropPrefab.name); //item using
+                    if (item.m_dropPrefab.name == "BlackCore")
+                    {
+                        int numininventory = inv2.CountItems(item.m_shared.m_name); // checks how many cores player has
+                        DBG.blogDebug("Number of " + item.m_dropPrefab.name + " is " + numininventory);
+                        if (numininventory >= costtoRecruit)
+                        {
+                            DBG.blogDebug("Attempting Trade");
+                            if (!hoverCreature.IsTamed())
                             {
-                                tame.Tame();
-                                bool itemremoved = inv2.RemoveItem(item, costtoRecruit);
-                                DBG.blogDebug("Recruited Dverger");
-                            }
-                            else
-                            {
-                                DBG.blogDebug("No tameable");
+                                Tameable tame = new Tameable();
+                                tame = hoverCreature.gameObject.GetComponent<Tameable>();
+
+                                if (tame != null)
+                                {
+                                    tame.Tame();
+                                    bool itemremoved = inv2.RemoveItem(item, costtoRecruit);
+                                    DBG.blogDebug("Recruited Dverger");
+                                }
+                                else
+                                {
+                                    DBG.blogDebug("No tameable");
+                                }
                             }
                         }
+                        else
+                        {
+                            DBG.blogDebug("Not enough Black cores, need " + costtoRecruit);
+                        }
+                    }
+                }catch(Exception ex)
+                {
+
+                }
+            }
+
+            */
+
+            /*
+            [HarmonyPrefix]
+            [HarmonyPatch(typeof(Character), "ApplyDamage")]
+            //private static class Character_RPC_Heal_Patch
+            //{
+            private static bool Prefix(ref Character __instance, ref HitData hit)
+            {
+                DBG.blogDebug("In All Tameable ApplyDamage Prefix");
+                try
+                {
+                    DBG.blogDebug("__instance.name= " + __instance.name);
+                }
+                catch
+                {
+                    DBG.blogDebug("__instance.name= failed");
+                }
+                try
+                {
+                    DBG.blogDebug("__instance= " + __instance);
+                }
+                catch
+                {
+                    DBG.blogDebug("__instance= failed");
+                }
+
+                try
+                {
+                    DBG.blogDebug("hit is null= " +  hit == null);
+                }
+                catch
+                {
+                    DBG.blogDebug("hit is null= failed");
+                }
+                try
+                {
+                    DBG.blogDebug("hit.m_attacker= " + hit.m_attacker);
+                }
+                catch
+                {
+                    DBG.blogDebug("hit.m_attacker= failed");
+                }
+                try
+                {
+                    DBG.blogDebug("hit.m_damage= " + hit.m_damage);
+                }
+                catch
+                {
+                    DBG.blogDebug("hit.m_damage= failed");
+                }
+                try
+                {
+                    DBG.blogDebug("hit.GetAttacker()= " + hit.GetAttacker().name);
+                }
+                catch
+                {
+                    DBG.blogDebug("hit.GetAttacker().name= failed");
+                }
+                DBG.blogDebug("Getting data of HitData");
+                foreach (FieldInfo prop in typeof(HitData).GetFields())
+                {
+                    try
+                    {
+                            DBG.blogDebug(prop.Name + " is " + prop.GetValue(hit));
+
+                    }
+                    catch
+                    {
+                        //DBG.blogDebug("AllTame_AnimalAI does not have " + prop.Name);
+                    }
+                }
+
+
+                if (__instance is null)
+                {
+                    DBG.blogDebug("__instance is Null skipping Error");
+                    return false;
+                }
+                DBG.blogDebug("__instance is not Null");
+                return true;
+
+            }
+
+
+
+            [HarmonyPrefix]
+            [HarmonyPatch(typeof(Character), "Damage")]
+            //private static class Character_RPC_Heal_Patch
+            //{
+            private static void Prefix2(ref Character __instance, ref HitData hit)
+            {
+                DBG.blogDebug("*******************In All Tameable Damage Prefix*************");
+                try
+                {
+                    DBG.blogDebug("__instance.name= " + __instance.name);
+                }
+                catch
+                {
+                    DBG.blogDebug("__instance.name= failed");
+                }
+                try
+                {
+                    DBG.blogDebug("__instance= " + __instance);
+                }
+                catch
+                {
+                    DBG.blogDebug("__instance= failed");
+                }
+                try
+                {
+                    DBG.blogDebug("hit is null= " + hit == null);
+                }
+                catch
+                {
+                    DBG.blogDebug("hit is null= failed");
+                }
+                try
+                {
+                    DBG.blogDebug("hit.m_attacker= " + hit.m_attacker);
+                }
+                catch
+                {
+                    DBG.blogDebug("hit.m_attacker= failed");
+                }
+                try
+                {
+                    DBG.blogDebug("hit.m_damage= " + hit.m_damage);
+                }
+                catch
+                {
+                    DBG.blogDebug("hit.m_damage= failed");
+                }
+                try
+                {
+                    DBG.blogDebug("hit.GetAttacker()= " + hit.GetAttacker().name);
+                }
+                catch
+                {
+                    DBG.blogDebug("hit.GetAttacker().name= failed");
+                }
+                DBG.blogDebug("Getting data of HitData");
+                foreach (FieldInfo prop in typeof(HitData).GetFields())
+                {
+                    try
+                    {
+                        DBG.blogDebug(prop.Name + " is " + prop.GetValue(hit));
+
+                    }
+                    catch
+                    {
+                        //DBG.blogDebug("AllTame_AnimalAI does not have " + prop.Name);
+                    }
+                }
+                DBG.blogDebug("trying get attacker");
+                Character attacker = hit.GetAttacker();
+                DBG.blogDebug("got attacker");
+                try
+                {
+                    DBG.blogDebug("************attacker.name=" + attacker.name);
+                }
+                catch
+                {
+                    DBG.blogDebug("****attacker.name=failed");
+                }
+                try
+                {
+                    DBG.blogDebug("************attacker.m_name=" + attacker.m_name);
+                }
+                catch
+                {
+                    DBG.blogDebug("*****attacker.m_name=failed");
+                }
+                try
+                {
+                    DBG.blogDebug("attacker ==null=" + attacker == null);
+                }
+                catch
+                {
+                    DBG.blogDebug("attacker ==null=failed");
+                }
+                foreach (FieldInfo prop2 in typeof(Character).GetFields())
+                {
+                    try
+                    {
+                        DBG.blogDebug(prop2.Name + " is " + prop2.GetValue(attacker));
+
+                    }
+                    catch
+                    {
+                        DBG.blogDebug("*** "+prop2.Name + " failed");
+                    }
+                }
+                try
+                {
+                    DBG.blogDebug("attacker.m_nview.IsValid()=" + attacker.m_nview.IsValid());
+                }
+                catch
+                {
+                    DBG.blogDebug("**attacker.m_nview.IsValid()=failed");
+                }
+
+                try
+                {
+                    DBG.blogDebug("attacker.GetZDOID()="+attacker.GetZDOID());
+                }
+                catch
+                {
+                    DBG.blogDebug("attacker.GetZDOID()=failed");
+                }
+                try
+                {
+                    DBG.blogDebug("__instance.GetComponent<Tameable>().name=" + __instance.GetComponent<Tameable>().name);
+                }
+                catch
+                {
+                    DBG.blogDebug("__instance.GetComponent<Tameable>().name=failed");
+                }
+                try
+                {
+                    if (attacker == __instance.GetComponent<Tameable>().GetPlayer(attacker.GetZDOID()))
+                    {
+                        DBG.blogDebug("attacker= true");
                     }
                     else
                     {
-                        DBG.blogDebug("Not enough Black cores, need " + costtoRecruit);
+                        DBG.blogDebug("attacker= false");
                     }
                 }
-            }catch(Exception ex)
-            {
-
-            }
-        }
-
-
-
-        /*
-        [HarmonyPrefix]
-        [HarmonyPatch(typeof(Character), "ApplyDamage")]
-        //private static class Character_RPC_Heal_Patch
-        //{
-        private static bool Prefix(ref Character __instance, ref HitData hit)
-        {
-            DBG.blogDebug("In All Tameable ApplyDamage Prefix");
-            try
-            {
-                DBG.blogDebug("__instance.name= " + __instance.name);
-            }
-            catch
-            {
-                DBG.blogDebug("__instance.name= failed");
-            }
-            try
-            {
-                DBG.blogDebug("__instance= " + __instance);
-            }
-            catch
-            {
-                DBG.blogDebug("__instance= failed");
-            }
-            
-            try
-            {
-                DBG.blogDebug("hit is null= " +  hit == null);
-            }
-            catch
-            {
-                DBG.blogDebug("hit is null= failed");
-            }
-            try
-            {
-                DBG.blogDebug("hit.m_attacker= " + hit.m_attacker);
-            }
-            catch
-            {
-                DBG.blogDebug("hit.m_attacker= failed");
-            }
-            try
-            {
-                DBG.blogDebug("hit.m_damage= " + hit.m_damage);
-            }
-            catch
-            {
-                DBG.blogDebug("hit.m_damage= failed");
-            }
-            try
-            {
-                DBG.blogDebug("hit.GetAttacker()= " + hit.GetAttacker().name);
-            }
-            catch
-            {
-                DBG.blogDebug("hit.GetAttacker().name= failed");
-            }
-            DBG.blogDebug("Getting data of HitData");
-            foreach (FieldInfo prop in typeof(HitData).GetFields())
-            {
-                try
-                {
-                        DBG.blogDebug(prop.Name + " is " + prop.GetValue(hit));
-
-                }
                 catch
                 {
-                    //DBG.blogDebug("AllTame_AnimalAI does not have " + prop.Name);
+
                 }
-            }
-            
-            
-            if (__instance is null)
-            {
-                DBG.blogDebug("__instance is Null skipping Error");
-                return false;
-            }
-            DBG.blogDebug("__instance is not Null");
-            return true;
-
-        }
-
-
-
-        [HarmonyPrefix]
-        [HarmonyPatch(typeof(Character), "Damage")]
-        //private static class Character_RPC_Heal_Patch
-        //{
-        private static void Prefix2(ref Character __instance, ref HitData hit)
-        {
-            DBG.blogDebug("*******************In All Tameable Damage Prefix*************");
-            try
-            {
-                DBG.blogDebug("__instance.name= " + __instance.name);
-            }
-            catch
-            {
-                DBG.blogDebug("__instance.name= failed");
-            }
-            try
-            {
-                DBG.blogDebug("__instance= " + __instance);
-            }
-            catch
-            {
-                DBG.blogDebug("__instance= failed");
-            }
-            try
-            {
-                DBG.blogDebug("hit is null= " + hit == null);
-            }
-            catch
-            {
-                DBG.blogDebug("hit is null= failed");
-            }
-            try
-            {
-                DBG.blogDebug("hit.m_attacker= " + hit.m_attacker);
-            }
-            catch
-            {
-                DBG.blogDebug("hit.m_attacker= failed");
-            }
-            try
-            {
-                DBG.blogDebug("hit.m_damage= " + hit.m_damage);
-            }
-            catch
-            {
-                DBG.blogDebug("hit.m_damage= failed");
-            }
-            try
-            {
-                DBG.blogDebug("hit.GetAttacker()= " + hit.GetAttacker().name);
-            }
-            catch
-            {
-                DBG.blogDebug("hit.GetAttacker().name= failed");
-            }
-            DBG.blogDebug("Getting data of HitData");
-            foreach (FieldInfo prop in typeof(HitData).GetFields())
-            {
-                try
+                ZDO zDO = __instance.m_nview.GetZDO();
+                Tameable component = __instance.GetComponent<Tameable>();
+                DBG.blogDebug("1");
+                if (__instance.IsTamed() && zDO != null && hit != null && !(component == null) && ShouldIgnoreDamage(__instance, hit, zDO))
                 {
-                    DBG.blogDebug(prop.Name + " is " + prop.GetValue(hit));
-
+                    hit = new HitData();
                 }
-                catch
+
+            }
+
+            private static bool ShouldIgnoreDamage(Character __instance, HitData hit, ZDO zdo)
+            {
+                DBG.blogDebug("2");
+                if (true)
                 {
-                    //DBG.blogDebug("AllTame_AnimalAI does not have " + prop.Name);
+                    DBG.blogDebug("3");
+                    Character attacker = hit.GetAttacker();
+                    DBG.blogDebug("4");
+                    if (attacker == __instance.GetComponent<Tameable>().GetPlayer(attacker.GetZDOID()))
+                    {
+                        DBG.blogDebug("5");
+                        return false;
+                    }
+                    DBG.blogDebug("6");
                 }
-            }
-            DBG.blogDebug("trying get attacker");
-            Character attacker = hit.GetAttacker();
-            DBG.blogDebug("got attacker");
-            try
-            {
-                DBG.blogDebug("************attacker.name=" + attacker.name);
-            }
-            catch
-            {
-                DBG.blogDebug("****attacker.name=failed");
-            }
-            try
-            {
-                DBG.blogDebug("************attacker.m_name=" + attacker.m_name);
-            }
-            catch
-            {
-                DBG.blogDebug("*****attacker.m_name=failed");
-            }
-            try
-            {
-                DBG.blogDebug("attacker ==null=" + attacker == null);
-            }
-            catch
-            {
-                DBG.blogDebug("attacker ==null=failed");
-            }
-            foreach (FieldInfo prop2 in typeof(Character).GetFields())
-            {
-                try
-                {
-                    DBG.blogDebug(prop2.Name + " is " + prop2.GetValue(attacker));
-
-                }
-                catch
-                {
-                    DBG.blogDebug("*** "+prop2.Name + " failed");
-                }
-            }
-            try
-            {
-                DBG.blogDebug("attacker.m_nview.IsValid()=" + attacker.m_nview.IsValid());
-            }
-            catch
-            {
-                DBG.blogDebug("**attacker.m_nview.IsValid()=failed");
+                return true;
             }
 
-            try
-            {
-                DBG.blogDebug("attacker.GetZDOID()="+attacker.GetZDOID());
-            }
-            catch
-            {
-                DBG.blogDebug("attacker.GetZDOID()=failed");
-            }
-            try
-            {
-                DBG.blogDebug("__instance.GetComponent<Tameable>().name=" + __instance.GetComponent<Tameable>().name);
-            }
-            catch
-            {
-                DBG.blogDebug("__instance.GetComponent<Tameable>().name=failed");
-            }
-            try
-            {
-                if (attacker == __instance.GetComponent<Tameable>().GetPlayer(attacker.GetZDOID()))
-                {
-                    DBG.blogDebug("attacker= true");
-                }
-                else
-                {
-                    DBG.blogDebug("attacker= false");
-                }
-            }
-            catch
-            {
-
-            }
-            ZDO zDO = __instance.m_nview.GetZDO();
-            Tameable component = __instance.GetComponent<Tameable>();
-            DBG.blogDebug("1");
-            if (__instance.IsTamed() && zDO != null && hit != null && !(component == null) && ShouldIgnoreDamage(__instance, hit, zDO))
-            {
-                hit = new HitData();
-            }
-
-        }
-
-        private static bool ShouldIgnoreDamage(Character __instance, HitData hit, ZDO zdo)
-        {
-            DBG.blogDebug("2");
-            if (true)
-            {
-                DBG.blogDebug("3");
-                Character attacker = hit.GetAttacker();
-                DBG.blogDebug("4");
-                if (attacker == __instance.GetComponent<Tameable>().GetPlayer(attacker.GetZDOID()))
-                {
-                    DBG.blogDebug("5");
-                    return false;
-                }
-                DBG.blogDebug("6");
-            }
-            return true;
-        }
-
-        */
+            */
 
 
 
 
-        [HarmonyPatch]
+            [HarmonyPatch]
         public class Reverse_SpawnSystem
         {
             [HarmonyReversePatch]
@@ -655,7 +681,7 @@ namespace AllTameable
                 }
                 catch
                 {
-                    DBG.blogDebug("ERROR: Failed initial GetInstNum");
+                    DBG.blogWarning("ERROR: Failed initial GetInstNum");
                 } //if fails do not add
                 if (prefab.GetComponent<Tameable>() != null)
                 {
@@ -738,6 +764,7 @@ namespace AllTameable
         public static Dictionary<string, TameTable> cfgList = new Dictionary<string, TameTable>();
         public static Dictionary<string, TameTable> cfgPostList = new Dictionary<string, TameTable>();
         public static Dictionary<string, List<string>> CompatMatesList = new Dictionary<string, List<string>>();
+        public static Dictionary<string, List<TradeAmount>> RecruitList = new Dictionary<string, List<TradeAmount>>();
         public static string[] rawMatesList = new string[] { };
         public static List<string> PostMakeList = new List<string>();
 
@@ -950,6 +977,11 @@ namespace AllTameable
                 }
                 j++;
             }
+        }
+
+        public void initRecruitList()
+        {
+
         }
 
 

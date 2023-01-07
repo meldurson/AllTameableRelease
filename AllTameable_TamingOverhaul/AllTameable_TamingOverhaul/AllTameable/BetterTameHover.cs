@@ -1,6 +1,6 @@
 ﻿using HarmonyLib;
 using System;
-
+using System.Collections.Generic;
 
 namespace AllTameable
 {
@@ -103,16 +103,46 @@ namespace AllTameable
                         }
                         else //not tamed
                         {
-                            taming_text += "Taming Time: ";
-                            if (_tm.GetRemainingTime() != _tm.m_tamingTime)
+
+                            if (__instance.gameObject.TryGetComponent<AllTame_Interactable>(out var ATI))
                             {
-                                taming_text += _tm.GetRemainingTime() + "s\\";
+                                if (ATI != null)
+                                {
+                                    taming_text += "Trade to Recruit";
+                                    taming_text += "\nPossible Trades: ";   
+                                    int line_len_trade = 20;
+                                    foreach (KeyValuePair<string, int> item in ATI.tradelist)
+                                    {
+
+                                        taming_text = taming_text + item.Value + " " + item.Key + ", ";
+                                        if (taming_text.Length - line_len_trade > 50)
+                                        {
+                                            line_len_trade = taming_text.Length;
+                                            taming_text = taming_text + "\n";
+                                        }
+                                    }
+                                    taming_text = taming_text.Remove(taming_text.Length - 2) + "\n";
+
+                                }
                             }
-                            taming_text += _tm.m_tamingTime + "s";
-                            if (notend)
+                            if (_tm.m_tamingTime > 0)
                             {
-                                taming_text += "\nPossible Consumables: ";
+                                taming_text += "Taming Time: ";
+                                if (_tm.GetRemainingTime() != _tm.m_tamingTime)
+                                {
+                                    taming_text += _tm.GetRemainingTime() + "s\\";
+                                }
+                                taming_text += _tm.m_tamingTime + "s";
+                                if (notend)
+                                {
+                                    taming_text += "\nPossible Consumables: ";
+                                }
                             }
+                            else
+                            {
+                                notend = false;
+                            }
+                            
                         }
 
 
