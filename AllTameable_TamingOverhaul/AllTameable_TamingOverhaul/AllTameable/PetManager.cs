@@ -92,6 +92,9 @@ namespace AllTameable
                 DBG.blogDebug("init Dragonegg");
                 InitDrakeEgg();
             }
+            TameListCfg.UnpackAndOverwriteMates();
+            TameListCfg.UnpackAndOverwriteTrades();
+            createHeartEffect();
             Dictionary<string, Plugin.TameTable> cfgList = Plugin.cfgList;
             foreach (KeyValuePair<string, Plugin.TameTable> item in cfgList)
             {
@@ -114,6 +117,7 @@ namespace AllTameable
             //AddTame(init_go, cfgvalue);
             DBG.blogInfo("Succesfully Loaded Config from server");
         }
+
 
         public static void FixAnimalAI(GameObject go) // Tameable is only available with MonsterAI, Creates new AI from MonsterAI and then Copies AI from Animal AI
         {
@@ -278,6 +282,19 @@ namespace AllTameable
 
         }
 
+        public static void createHeartEffect()
+        {
+            DBG.blogDebug("Making HeartEffect");
+            heartEffectGO = Object.Instantiate(wtame.m_petEffect.m_effectPrefabs[0].m_prefab, Root.transform);
+            DBG.blogDebug("removing child");
+            heartEffectGO.transform.GetChild(1).parent = null;
+            DBG.blogDebug("Creating new effect");
+            EffectList.EffectData effectData2 = new EffectList.EffectData();
+            DBG.blogDebug("setting prefab to go");
+            effectData2.m_prefab = heartEffectGO;
+            DBG.blogDebug("Created HeartEffect");
+        }
+
 
         public static void Init()
         {
@@ -288,15 +305,7 @@ namespace AllTameable
             {
                 InitDrakeEgg();
             }
-            DBG.blogDebug("Making HeartEffect");
-            heartEffectGO = Object.Instantiate(wtame.m_petEffect.m_effectPrefabs[0].m_prefab, Root.transform);
-            DBG.blogDebug("removing child");
-            heartEffectGO.transform.GetChild(1).parent = null;
-            DBG.blogDebug("Creating new effect");
-            EffectList.EffectData effectData2 = new EffectList.EffectData();
-            DBG.blogDebug("setting prefab to go");
-            effectData2.m_prefab = heartEffectGO;
-            DBG.blogDebug("Created HeartEffect");
+            createHeartEffect();
 
             foreach (KeyValuePair<string, List<TradeAmount>> item in Plugin.RecruitList)
             {
@@ -408,9 +417,9 @@ namespace AllTameable
                     DBG.blogDebug("Found RecruitList");
                     if (!go.TryGetComponent<AllTame_Interactable>(out var AT_Int))
                     {
-                        DBG.blogDebug("Adding ATI");
+                        DBG.blogDebug("Adding AllTame_Interactable");
                         AT_Int = go.AddComponent<AllTame_Interactable>();
-                        DBG.blogDebug("Added ATI");
+                        DBG.blogDebug("Added AllTame_Interactable");
 
                     }
 
@@ -522,7 +531,7 @@ namespace AllTameable
                         }
                     }
                 }
-                else { DBG.blogDebug("Cannot be tamed by food"); }
+                else { DBG.blogInfo("Cannot be tamed by food"); }
 
                 if (tb.procretion)
                 {
@@ -557,7 +566,7 @@ namespace AllTameable
 
                         if (component3.m_offspring.GetComponent<Tameable>() == null)
                         {
-                            DBG.blogDebug("Making Seeker Brood only tameable by offspring");
+                            DBG.blogInfo("Making Seeker Brood only tameable by offspring");
                             string tameList = "SeekerBrood,true,1,90,2,10,30,20,,false,false,10,0,150,400";
                             string[] arr = tameList.Split(',');
                             Plugin.TameTable seekerbrood_tamtetable = TameListCfg.ArrToTametable(arr);
@@ -576,8 +585,13 @@ namespace AllTameable
                     if (ZNet.instance.IsServer() & ZNet.instance.IsDedicated())
                     {
                         GameObject serverfab = ZNetScene.instance.GetPrefab(go.name);
-                        DBG.blogDebug("*******prefabName = " + serverfab.name + " ********");
-                        DBG.blogDebug("istameable = " + serverfab.GetComponent<Tameable>().enabled);
+                        string istamestr = " is not Tameable";
+                        if (serverfab.GetComponent<Tameable>().enabled)
+                        {
+                            istamestr = " is Tameable";
+                        }
+                        DBG.blogDebug("******* " + serverfab.name + istamestr + " ********");
+                        //DBG.blogDebug("istameable = " + serverfab.GetComponent<Tameable>().enabled);
                     }
                 }
                 else

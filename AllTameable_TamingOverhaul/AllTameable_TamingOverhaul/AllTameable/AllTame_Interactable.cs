@@ -38,11 +38,12 @@ namespace AllTameable
             m_nview = GetComponent<ZNetView>();
             m_character = GetComponent<Character>();
             createTradeList();
-
+            /*
             foreach (KeyValuePair<string, int> item in tradelist)
             { 
                     DBG.blogDebug(m_character.name + ": Allowed trade: " + item.Key + " with amount "+ item.Value);
             }
+            */
 
 
 

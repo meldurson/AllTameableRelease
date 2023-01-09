@@ -199,7 +199,9 @@ namespace AllTameable
             cfgListFailed.Clear();
             cfgPostList.Clear();
             CompatMatesList.Clear();
-            rawMatesList = new string[] { };
+            RecruitList.Clear();
+            rawMatesList = new List<string> { };
+            rawTradesList = new List<string> { };
             PostMakeList.Clear();
             PostLoadServerConfig = false;
             PreSetMinis = true;
@@ -765,7 +767,9 @@ namespace AllTameable
         public static Dictionary<string, TameTable> cfgPostList = new Dictionary<string, TameTable>();
         public static Dictionary<string, List<string>> CompatMatesList = new Dictionary<string, List<string>>();
         public static Dictionary<string, List<TradeAmount>> RecruitList = new Dictionary<string, List<TradeAmount>>();
-        public static string[] rawMatesList = new string[] { };
+        public static List<string> rawMatesList = new List<string> { };
+        public static List<string> rawTradesList = new List<string> { };
+
         public static List<string> PostMakeList = new List<string>();
 
         public static TameTable CfgTable;
@@ -979,10 +983,6 @@ namespace AllTameable
             }
         }
 
-        public void initRecruitList()
-        {
-
-        }
 
 
         public bool initCfg()
@@ -995,6 +995,7 @@ namespace AllTameable
             const string reduceMultiSpaceCFG = @"[ ]{2,}";
             //string cfg_string = (string)cfg.Value;
             var cfg_string = Regex.Replace(cfg.Value.Replace("\t", " "), reduceMultiSpaceCFG, "");
+            cfg_string = cfg_string.Replace("TRUE", "true").Replace("FALSE", "false");
             DBG.blogWarning(cfg_string);
             string[] array = cfg_string.Split(';');
             string[] array2 = array;
@@ -1037,13 +1038,13 @@ namespace AllTameable
                     return false;
                 }
                 tameTable.consumeItems = array3[8];
-                if (array3[9] == "true")
+                if (array3[9] == "false")
                 {
-                    tameTable.changeFaction = true;
+                    tameTable.changeFaction = false;
                 }
-                if (array3[10] == "true")
+                if (array3[10] == "false")
                 {
-                    tameTable.procretion = true;
+                    tameTable.procretion = false;
                 }
                 try
                 {

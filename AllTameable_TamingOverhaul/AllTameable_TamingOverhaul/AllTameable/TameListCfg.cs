@@ -43,8 +43,8 @@ namespace AllTameable
                     if (prefablist.Count() >1)
                     {
                         //DBG.blogDebug("Count >0: "+ arr[0]);
-                        Plugin.rawMatesList.Append(arr[0]);
-                        //DBG.blogDebug("rawmateslist=" + string.Join(",", Plugin.rawMatesList));
+                        Plugin.rawMatesList.Add(arr[0]);
+                        
                         SetCompatMates(prefablist);
                         
                         for (int i = 0; i < prefablist.Count(); i++)
@@ -98,8 +98,11 @@ namespace AllTameable
                 {
                     DBG.blogWarning("Failed to add tametablecfg for " + arr[0]);
                 }
-                    
+                
+
             }
+            DBG.blogDebug("rawmateslist=" + string.Join(",", Plugin.rawMatesList));
+            DBG.blogDebug("rawtradelist= " + string.Join(",", Plugin.rawTradesList));
             Plugin.cfgList = cfgList2;
             return true;
         }
@@ -125,13 +128,31 @@ namespace AllTameable
             }
         }
 
-        public void UnpackRawMates()
+        public static void UnpackAndOverwriteMates()
         {
-            string[] rawmates = Plugin.rawMatesList;
+            DBG.blogDebug("Unpacking Mates");
+            Plugin.CompatMatesList = new Dictionary<string, List<string>>();
+            string[] rawmates = Plugin.rawMatesList.ToArray();
             foreach (string str in rawmates)
             {
+                //DBG.blogDebug(rawmates);
                 SetCompatMates(SplitMates(str));
             }
+            DBG.blogDebug("Mates Unpacked");
+        }
+
+        public static void UnpackAndOverwriteTrades()
+        {
+            DBG.blogDebug("Unpacking Trades");
+            Plugin.RecruitList = new Dictionary<string, List<TradeAmount>>();
+            List<string> rawtrades = Plugin.rawTradesList;
+
+            foreach (string str in rawtrades)
+            {
+                DBG.blogDebug(rawtrades.ToString());
+                AddTradeList(str.Split(',')[0], str.Split(',')[1],true);
+            }
+            DBG.blogDebug("Trades Unpacked");
         }
         public static string[] SplitMates(string fullstr)
         {
@@ -169,7 +190,7 @@ namespace AllTameable
                     tmtbl.tamingTime = -2;
                     tmtbl.consumeItems = "";
                     tmtbl.procretion = false;
-                    AddTradeList(arr[0],arr[2]);
+                    AddTradeList(arr[0],arr[2],false);
                     return tmtbl;
                 }
 
@@ -250,15 +271,16 @@ namespace AllTameable
             return false;
         }
 
-        public static void AddTradeList(string creaturename, string rawstr)
+        public static void AddTradeList(string creaturename, string rawstr, bool fromServer)
         {
+            
             string[] trade_combined = rawstr.Split(':');
             string[] split_trade;
             List<TradeAmount> trdList = new List<TradeAmount>();
             foreach ( string str_group in trade_combined)
             {
                 split_trade = str_group.Split('=');
-                DBG.blogDebug(split_trade[0] + " with amount of " + split_trade[1]);
+                //DBG.blogDebug(split_trade[0] + " with amount of " + split_trade[1]);
                 TradeAmount trdAmt = new TradeAmount();
                 trdAmt.tradeItem = split_trade[0];
                 try { trdAmt.tradeAmt = (int.Parse(split_trade[1])); } catch {
@@ -267,17 +289,26 @@ namespace AllTameable
                 trdList.Add(trdAmt);
             }
             string[] prefablist = SplitMates(creaturename);
+            if(prefablist.Count() == 0)
+            {
+                prefablist = new string[1] { creaturename };
+            }
+            //DBG.blogDebug("creaturename=" + creaturename);
+            //DBG.blogDebug("prefablist.Count()=" + prefablist.Count());
             for (int i = 0; i < prefablist.Count(); i++)
             {
                 if (!Plugin.RecruitList.ContainsKey(prefablist[i]))
                 {
                     Plugin.RecruitList.Add(prefablist[i], trdList);
+                    if (!fromServer) { Plugin.rawTradesList.Add(prefablist[i] + "," + rawstr); }
+                    DBG.blogDebug("Trades:"+prefablist[i] + "," + rawstr);
                 }
                 else
                 {
                     DBG.blogWarning("Already tradelist set for "+prefablist[i]);
                 }
             }
+            
         }
     }
 }

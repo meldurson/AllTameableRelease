@@ -19,17 +19,22 @@ namespace AllTameable.RPC
         public string[] split_keys;
         public Plugin.TameTable[] split_tmtbl;
         public string[] mate_dict;
+        public string[] trade_dict;
+        
         public ZPackage Pack()
         {
             //cfgList = Plugin.cfgList;
             SplitTameDict splitdict = createsplitdict();
             split_keys = splitdict.keys;
             split_tmtbl = splitdict.tmtbl;
-            mate_dict = Plugin.rawMatesList;
+            mate_dict = Plugin.rawMatesList.ToArray();
+            trade_dict = Plugin.rawTradesList.ToArray();
             //DBG.blogDebug("split tameDict");
             DBG.blogDebug("keysnull=" + (split_keys == null));
             DBG.blogDebug("tmblnull=" + (split_tmtbl == null));
-            
+            DBG.blogDebug("rawmatesList:" + string.Join(",", mate_dict));
+            DBG.blogDebug("rawtradesList:" + string.Join(",", trade_dict));
+
             foreach (string cell in split_keys)
             {
                 DBG.blogDebug("key=" + cell);
@@ -71,7 +76,10 @@ namespace AllTameable.RPC
                         string[] newsplit_keys = configPackage.split_keys;
                         Plugin.TameTable[] newsplit_tmtbl = configPackage.split_tmtbl;
                         Combinesplitdict(newsplit_keys, newsplit_tmtbl);
-                        Plugin.rawMatesList = configPackage.mate_dict;
+                        Plugin.rawMatesList = configPackage.mate_dict.ToList();
+                        DBG.blogDebug("rawmatesList:" + string.Join(",",configPackage.mate_dict));
+                        Plugin.rawTradesList = configPackage.trade_dict.ToList();
+                        DBG.blogDebug("rawtradesList:" + string.Join(",", configPackage.trade_dict));
                         //ConfigurationManager.GeneralConfig = configPackage.GeneralConfig;
                         //ConfigurationManager.SimpleConfig = configPackage.SimpleConfig;
                         //ConfigurationManager.SpawnSystemConfig = configPackage.SpawnSystemConfig;
