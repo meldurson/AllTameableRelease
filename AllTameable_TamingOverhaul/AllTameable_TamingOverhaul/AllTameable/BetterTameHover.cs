@@ -33,7 +33,7 @@ namespace AllTameable
                             {
                                 if (_Proc.IsDue())
                                 {
-                                    taming_text += "Is Due";
+                                    taming_text += "Is Due ";
                                     notend = false;
                                 }
                                 else if (_Proc.IsPregnant())

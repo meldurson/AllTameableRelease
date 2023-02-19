@@ -34,6 +34,7 @@ namespace AllTameable
             public string consumeItems { get; set; } = "RawMeat";
             public bool changeFaction { get; set; } = true;
             public bool procretion { get; set; } = true;
+            public bool procretionOverwrite { get; set; } = false;
             public int maxCreatures { get; set; } = 5;
             public float pregnancyChance { get; set; } = 0.33f;
             public float pregnancyDuration { get; set; } = 10f;

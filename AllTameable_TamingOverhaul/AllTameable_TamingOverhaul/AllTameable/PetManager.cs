@@ -495,6 +495,7 @@ namespace AllTameable
 
                 component.m_sootheEffect = wtame.m_sootheEffect;
                 component.m_commandable = tb.commandable;
+                DBG.blogDebug("commandable= " + tb.commandable);
                 component.m_tamingTime = tb.tamingTime;
                 component.m_fedDuration = tb.fedDuration;
                 component2.m_consumeRange = tb.consumeRange;
@@ -549,7 +550,7 @@ namespace AllTameable
                     component3.m_pregnancyDuration = tb.pregnancyDuration;
                     component3.m_partnerCheckRange = 30f;
                     component3.m_totalCheckRange = 30f;
-                    if (flag && component3.m_offspring != null && !Plugin.CheckHuman(go))
+                    if (flag && component3.m_offspring != null && !Plugin.CheckHuman(go) && !tb.procretionOverwrite)
                     {
                         Growup component4 = component3.m_offspring.GetComponent<Growup>();
                         component4.m_growTime = tb.growTime;
@@ -596,6 +597,10 @@ namespace AllTameable
                 }
                 else
                 {
+                    if (go.GetComponent<Procreation>() != null)
+                    {
+                        Object.DestroyImmediate(go.GetComponent<Procreation>());
+                    }
                     DBG.blogDebug("Added ability to tame to " + go.name);
                 }
             }

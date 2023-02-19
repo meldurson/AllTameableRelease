@@ -245,7 +245,16 @@ namespace AllTameable
             try { tmtbl.consumeSearchRange = float.Parse(arr[7]); } catch { strFailed += "consumesearchrange, "; }
             try { tmtbl.consumeItems = arr[8]; } catch { strFailed += "consumeitems, "; }
             try { tmtbl.changeFaction = (arr[9] == "true"); } catch { strFailed += "changefaction, "; }
-            try { tmtbl.procretion = (arr[10] == "true"); } catch { strFailed += "procreation, "; }
+            if (arr[10] == "overwrite")
+            {
+                tmtbl.procretion = true;
+                tmtbl.procretionOverwrite = true;
+            }
+            else
+            {
+                try { tmtbl.procretion = (arr[10] == "true"); } catch { strFailed += "procreation, "; }
+            }
+            
             try { tmtbl.maxCreatures = (int.Parse(arr[11])); } catch { strFailed += "tamingtime, "; }
             try { tmtbl.pregnancyChance = float.Parse(arr[12], CultureInfo.InvariantCulture.NumberFormat); } 
             catch { strFailed += "pregchance, "; }

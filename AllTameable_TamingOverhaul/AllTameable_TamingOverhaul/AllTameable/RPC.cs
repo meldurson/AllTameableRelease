@@ -25,11 +25,11 @@ namespace AllTameable.RPC
         }
         */
         //****************************Start New Code**************************
-        [HarmonyPostfix]
+        [HarmonyPrefix]
         [HarmonyPatch(typeof(ZNet), "OnNewConnection")]
         //private static class Postfix_ZNet_OnNewConnection
         //{
-            private static void Postfix(ZNet __instance, ZNetPeer peer)
+            private static void Prefix(ref ZNet __instance, ZNetPeer peer)
             {
                 DBG.blogDebug("RPC_OnNewConnection");
                 if (ZNet.instance.IsServer())
