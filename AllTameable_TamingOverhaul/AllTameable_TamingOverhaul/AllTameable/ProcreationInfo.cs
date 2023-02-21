@@ -28,7 +28,7 @@ namespace AllTameable.CLLC
 
         private void Awake()
         {
-            if (!GetComponentInParent<Growup>())
+            if (!GetComponentInParent<Growup>() & !GetComponentInParent<EggGrow>())
             {
                 Character thischar = gameObject.GetComponent<Character>();
                 if (!thischar.name.Contains("SeekerBrood") | Plugin.SeekerBroodOffspring.Value == false)
@@ -43,8 +43,11 @@ namespace AllTameable.CLLC
         public void SetGrow(Character growchar)
         {
             Character thischar = gameObject.GetComponent<Character>();
-            API.SetInfusionCreature(thischar, API.GetInfusionCreature(growchar));
-            API.SetExtraEffectCreature(thischar, API.GetExtraEffectCreature(growchar));
+            if(thischar != null)
+            {
+                API.SetInfusionCreature(thischar, API.GetInfusionCreature(growchar));
+                API.SetExtraEffectCreature(thischar, API.GetExtraEffectCreature(growchar));
+            }
         }
 
         public void SetInfusion(Character mother)
@@ -239,8 +242,17 @@ namespace AllTameable.CLLC
         {
             dad_lvl = other.GetLevel();
             //DBG.blogDebug("dad_lvl =" + dad_lvl);
-            dad_effect = API.GetExtraEffectCreature(other);
-            dad_infusion = API.GetInfusionCreature(other);
+            try
+            {
+                dad_effect = API.GetExtraEffectCreature(other);
+            }
+            catch { DBG.blogWarning("Error when trying to get Effect of Father"); }
+            try
+            {
+                dad_infusion = API.GetInfusionCreature(other);
+            }
+            catch{DBG.blogWarning("Error when trying to get Infusion of Father");}
+            
 
         }
 

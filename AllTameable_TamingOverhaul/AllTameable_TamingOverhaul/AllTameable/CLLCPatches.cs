@@ -145,14 +145,27 @@ namespace AllTameable.CLLC
 
             private static GameObject OnGrowup(GameObject child, Growup growup)
             {
-                //DBG.blogDebug("inOnGrowup");
+                DBG.blogDebug("inOnGrowup");
                 if (Plugin.UseCLLC)
                 {
-                    //DBG.blogDebug("hasCLLC");
-                    Character childchar = child.GetComponent<Character>();
-                    Character growchar = growup.gameObject.GetComponent<Character>();
-                    ProcreationInfo procinfo = childchar.gameObject.AddComponent<ProcreationInfo>();
-                    procinfo.SetGrow(growchar);
+                    try
+                    {
+                        DBG.blogDebug("hasCLLC");
+                        Character childchar = child.GetComponent<Character>();
+                        Character growchar = growup.gameObject.GetComponent<Character>();
+                        ProcreationInfo procinfo = childchar.gameObject.AddComponent<ProcreationInfo>();
+                        throw new Exception("Try to duplicate");
+                        procinfo.SetGrow(growchar);
+                    }
+                    catch
+                    {
+                        DBG.blogWarning("Failed Custom Growup");
+                    }
+                    
+
+
+
+                    
                 }
 
                 return child;

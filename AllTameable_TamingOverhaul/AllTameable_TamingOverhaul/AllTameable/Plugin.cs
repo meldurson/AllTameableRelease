@@ -633,7 +633,7 @@ namespace AllTameable
             */
 
 
-
+        /* old getrninstances
 
             [HarmonyPatch]
         public class Reverse_SpawnSystem
@@ -724,6 +724,116 @@ namespace AllTameable
             }
 
         }
+
+        */ // old getnrinstances
+
+        private static int Safe_GetNrOfInstances(GameObject prefab, Vector3 center, float maxRange, bool eventCreaturesOnly, bool procreationOnly)
+        {
+            string text = prefab.name + "(Clone)";
+            if (prefab.GetComponent<BaseAI>() != null)
+            {
+                List<BaseAI> allInstances = BaseAI.GetAllInstances();
+                int num = 0;
+                {
+                    foreach (BaseAI item in allInstances)
+                    {
+                        if (item.gameObject.name != text || (maxRange > 0f && Vector3.Distance(center, item.transform.position) > maxRange))
+                        {
+                            continue;
+                        }
+                        if (eventCreaturesOnly)
+                        {
+                            MonsterAI monsterAI = item as MonsterAI;
+                            if ((bool)monsterAI && !monsterAI.IsEventCreature())
+                            {
+                                continue;
+                            }
+                        }
+                        if (procreationOnly)
+                        {
+                            Procreation component = item.GetComponent<Procreation>();
+                            if ((bool)component && !component.ReadyForProcreation())
+                            {
+                                continue;
+                            }
+                        }
+                        num++;
+                    }
+                    return num;
+                }
+            }
+            GameObject[] array = GameObject.FindGameObjectsWithTag("spawned");
+            int num2 = 0;
+            GameObject[] array2 = array;
+            foreach (GameObject gameObject in array2)
+            {
+                if (gameObject.name.StartsWith(text) && (!(maxRange > 0f) || !(Vector3.Distance(center, gameObject.transform.position) > maxRange)))
+                {
+                    num2++;
+                }
+            }
+            return num2;
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(SpawnSystem), "GetNrOfInstances", new Type[] { typeof(GameObject), typeof(Vector3),typeof(float),typeof(bool),typeof(bool) })]
+        //private static class Prefix_Player_SetLocalPlayer
+        //{
+        private static void Postfix_SpawnSystem_GetNrOfInstances(GameObject prefab, Vector3 center, float maxRange, bool eventCreaturesOnly, bool procreationOnly, ref int __result)
+        {
+            int sum = __result;
+            if (prefab.GetComponent<Tameable>() != null)
+            {
+                try
+                {
+                    if (CompatMatesList.TryGetValue(prefab.name, out List<string> mates))
+                    {
+                        ZNetScene zns = ZNetScene.instance;
+                        foreach (var mate in mates)
+                        {
+                            if (zns.GetPrefab(mate))
+                            {
+                                int added = 0;
+                                try
+                                {
+                                    added = Safe_GetNrOfInstances(zns.GetPrefab(mate), center, maxRange, eventCreaturesOnly, procreationOnly);
+                                }
+                                catch 
+                                { 
+                                    added = 0;
+                                    DBG.blogDebug("Failed to add "+mate+":error");
+                                } //if fails do not add
+                                if (added > 0)
+                                {
+                                    DBG.blogDebug("Added " + added + " of " + mate + "to instnum for " + prefab.name);
+                                }
+                                sum += added;
+                            }
+                            else
+                            {
+                                DBG.blogDebug("Failed to find mate of " + mate + "to instnum for " + prefab.name);
+                            }
+                        }
+
+                    }
+                }
+                catch { DBG.blogDebug("Error in finding mate for " + prefab.name); }
+            }
+            return;
+        }
+
+        /*
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(SpawnSystem), "GetNrOfInstances")]
+        private static void Prefix_SpawnSystem_GetNrOfInstances(GameObject prefab, Vector3 center, float maxRange, bool eventCreaturesOnly, bool procreationOnly)
+        {
+            DBG.blogDebug("GetNrInstances:" + prefab.name);
+        }
+        */
+
+
+
+
         /*
         private static class Postfix_GetNrOfInstances
         {
@@ -888,7 +998,11 @@ namespace AllTameable
             }
             //clientInit();
             DBG.blogInfo("AllTameable Loaded");
-            Jotunn.Managers.PrefabManager.OnVanillaPrefabsAvailable += PrefabManager.ItemReg;
+            if (useTamingTool.Value)
+            {
+                Jotunn.Managers.PrefabManager.OnVanillaPrefabsAvailable += PrefabManager.ItemReg;
+            }
+            
             Jotunn.Managers.SynchronizationManager.OnConfigurationSynchronized += (obj, attr) =>
             {
                 TameUpdate = true;
@@ -918,7 +1032,7 @@ namespace AllTameable
                 harmony.PatchAll(typeof(global::RRRCoreTameable.RRRCoreTameable));
             }
 
-            //DBG.blogInfo("Patching Select");
+            DBG.blogInfo("Patching Select");
             harmony.PatchAll(typeof(global::AllTameable.Plugin));
             DBG.blogDebug("Patched Plugin");
             harmony.PatchAll(typeof(global::AllTameable.BetterTameHover));
@@ -929,10 +1043,12 @@ namespace AllTameable
             DBG.blogDebug("Patched RPC");
             harmony.PatchAll(typeof(global::AllTameable.CLLC.CLLCPatches));
             DBG.blogDebug("Patched CLLCPatches");
+            /*
             harmony.PatchAll(typeof(global::AllTameable.Plugin.Reverse_SpawnSystem));
             DBG.blogDebug("Patched ReverseSpawn");
             harmony.PatchAll(typeof(global::AllTameable.Plugin.Prefix_GetNrOfInstances));
             DBG.blogDebug("Patched Prefix_GetNrOfInstances");
+            */
             harmony.PatchAll(typeof(global::AllTameable.CLLC.CLLCPatches.InterceptProcreation));
             DBG.blogDebug("Patched InterceptProcreation");
             harmony.PatchAll(typeof(global::AllTameable.CLLC.CLLCPatches.InterceptGrowup));

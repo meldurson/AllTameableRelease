@@ -495,7 +495,15 @@ namespace AllTameable
 
                 component.m_sootheEffect = wtame.m_sootheEffect;
                 component.m_commandable = tb.commandable;
-                DBG.blogDebug("commandable= " + tb.commandable);
+                if (tb.commandable)
+                {
+                    DBG.blogDebug(go.name + " is commandable");
+                }
+                else
+                {
+                    DBG.blogDebug(go.name + " is not commandable");
+                }
+
                 component.m_tamingTime = tb.tamingTime;
                 component.m_fedDuration = tb.fedDuration;
                 component2.m_consumeRange = tb.consumeRange;

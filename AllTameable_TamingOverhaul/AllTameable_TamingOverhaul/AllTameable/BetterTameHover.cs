@@ -1,6 +1,7 @@
 ﻿using HarmonyLib;
 using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace AllTameable
 {
@@ -29,7 +30,11 @@ namespace AllTameable
                         //bool crowded = false;
                         if (__instance.m_tamed)
                         {
-                            if (_Proc != null)
+                            if (Plugin.debugout.Value)
+                            {
+                                taming_text += ("Prefab is: " + __instance.name +", is commandable= "+ _tm.m_commandable +"\n").Replace("(Clone)","");
+                            }
+                                if (_Proc != null)
                             {
                                 if (_Proc.IsDue())
                                 {
@@ -71,6 +76,7 @@ namespace AllTameable
                                                 else
                                                 {
                                                     taming_text += "Needs Mate\n";
+                                                    
                                                 }
 
                                             }
@@ -162,17 +168,34 @@ namespace AllTameable
                         }
                         __result = __result + taming_text;
                     }
+                    else // not tameable
+                    {
+                        if (Plugin.debugout.Value)
+                        {
+                            string taming_text = "\n";
+                            taming_text += "Not tameable \n";
+                            taming_text += "Prefab name is: " + __instance.name;
+                            taming_text = taming_text.Replace("(Clone)", "");
+                            __result = __result + taming_text;
+                        }
+                    }
 
                 }
             }
         }
         public static int getInstNum(Procreation _proc)
         {
+            int nrOfInstances = -10;
+            int nrOfInstances2 = -10;
             try
             {
-                int nrOfInstances = SpawnSystem.GetNrOfInstances(_proc.m_myPrefab, _proc.gameObject.transform.position, _proc.m_totalCheckRange);
+                
+
+                nrOfInstances = SpawnSystem.GetNrOfInstances(_proc.m_myPrefab, _proc.gameObject.transform.position, _proc.m_totalCheckRange);
                 //DBG.blogDebug(nrOfInstances);
-                int nrOfInstances2 = SpawnSystem.GetNrOfInstances(_proc.m_offspringPrefab, _proc.gameObject.transform.position, _proc.m_totalCheckRange);
+                nrOfInstances2 = SpawnSystem.GetNrOfInstances(_proc.m_offspringPrefab, _proc.gameObject.transform.position, _proc.m_totalCheckRange);
+                //DBG.blogDebug("n1=" + nrOfInstances + ", n2= " + nrOfInstances2);
+                //DBG.blogDebug("_proc.m_maxCreatures=" + _proc.m_maxCreatures);
                 bool n_instcheck = nrOfInstances + nrOfInstances2 < _proc.m_maxCreatures && SpawnSystem.GetNrOfInstances(_proc.m_myPrefab, _proc.transform.position, _proc.m_partnerCheckRange, eventCreaturesOnly: false, procreationOnly: true) >= 2;
                if (n_instcheck == true)
                 {
@@ -188,18 +211,23 @@ namespace AllTameable
                 }
                     
             }
-            catch
+            catch (Exception e)
             {
+                DBG.blogDebug("Error: "+ e.Message);
+                DBG.blogDebug("Error: " + e.StackTrace);
                 return -1; //error
             }
         }
+
+
+
         public static string GetPregStats(Procreation _proc)
         {
             string ret_string = "";
             bool isvalid = !_proc.m_nview.IsValid() || !_proc.m_nview.IsOwner() || !_proc.m_character.IsTamed();
-
+            ret_string += "\nPrefab Name: " + _proc.gameObject.name.Replace("(Clone)","");
             ret_string += "\nisValid: " + !isvalid;
-            ret_string += "\nisNotPreg: " + !_proc.IsPregnant();
+            //ret_string += "\nisNotPreg: " + !_proc.IsPregnant();
             ret_string += "\nPregchance= " + _proc.m_pregnancyChance;
             ret_string += "\nIsNotAlerted= " + !_proc.m_baseAI.IsAlerted();
             ret_string += "\nIsNotHungry= " + !_proc.m_tameable.IsHungry();
@@ -219,6 +247,8 @@ namespace AllTameable
             else if (instcheck == 2)
             {
                 ret_string += "\nLess than max instance: False (needs mate)";
+                ret_string += "\nClosest 3 Creatures within range of "+ _proc.m_totalCheckRange + " units are:\n";
+                ret_string += GetCloseInstances(_proc.gameObject, _proc.gameObject.transform.position, _proc.m_totalCheckRange);
             }
             else
             {
@@ -231,6 +261,107 @@ namespace AllTameable
 
             return ret_string;
         }
+
+
+        private static string GetCloseInstances(GameObject instance, Vector3 center, float maxRange)
+        {
+            //DBG.blogDebug("In GetCloseInstances");
+            Character partner = null;
+            float num = 999999f;
+            float num2 = 999999f;
+            float num3 = 999999f;
+            string close1 = "n/a";
+            string close2 = "n/a2";
+            string close3 = "n/a3";
+            BaseAI baseai = instance.GetComponentInParent<BaseAI>();
+            List<Character> characters = Character.GetAllCharacters();
+
+            foreach (Character character in characters)
+            {
+                
+                if (!(character.gameObject == baseai.gameObject) && !(character.IsPlayer()) && character.GetComponent<ZNetView>().IsValid())// && !(Vector3.Distance(character.transform.position, base.transform.position) > 40))
+                {
+
+                    float numtemp = Vector3.Distance(character.transform.position, instance.transform.position);
+                    if (numtemp < num)
+                    {
+                        close1 = character.name;
+                        num = numtemp;
+                        if (character.IsTamed())
+                        {
+                            close1 = close1 + "(Tamed)";
+                        }
+                        else
+                        {
+                            if (character.gameObject.GetComponent<Tameable>() != null)
+                            {
+                                close1 = close1 + "(Untamed)";
+                            }
+                            else
+                            {
+                                close1 = close1 + "(NotTameable)";
+                            }
+                        }
+                        
+                    }
+                    else if (numtemp < num2)
+                    {
+                        close2 = character.name;
+                        num2 = numtemp;
+                        if (character.IsTamed())
+                        {
+                            close2 = close2 + "(Tamed)";
+                        }
+                        else
+                        {
+                            if (character.gameObject.GetComponent<Tameable>() != null)
+                            {
+                                close2 = close2 + "(Untamed)";
+                            }
+                            else
+                            {
+                                close2 = close2 + "(NotTameable)";
+                            }
+                        }
+                    }
+                    else if (numtemp < num3)
+                    {
+                        close3 = character.name;
+                        num3 = numtemp;
+                        if (character.IsTamed())
+                        {
+                            close3 = close3 + "(Tamed)";
+                        }
+                        else
+                        {
+                            if (character.gameObject.GetComponent<Tameable>() != null)
+                            {
+                                close3 = close3 + "(Untamed)";
+                            }
+                            else
+                            {
+                                close3 = close3 + "(NotTameable)";
+                            }
+                        }
+                    }
+                }
+                //if (clonemates.Contains(character.gameObject.name))
+                //{
+                //    DBG.blogDebug("found clone with name " + character.gameObject.name);
+                //}
+            }
+            string threeclose = (close1 + ":" + close2 + ":" + close3).Replace("(Clone)","");
+            //DBG.blogDebug("Closest Creatures are " + close1 + ":" + close2 + ":" + close3);
+            //DBG.blogDebug("Partner with name go:" + partner.gameObject.name + " is " + Vector3.Distance(partner.transform.position, base.transform.position) + "m away");
+
+            return threeclose;
+        }
+
+
+
+
+
+
     }
 
 
