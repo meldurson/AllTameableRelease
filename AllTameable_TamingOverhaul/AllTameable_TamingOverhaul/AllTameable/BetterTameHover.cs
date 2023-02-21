@@ -225,8 +225,8 @@ namespace AllTameable
         {
             string ret_string = "";
             bool isvalid = !_proc.m_nview.IsValid() || !_proc.m_nview.IsOwner() || !_proc.m_character.IsTamed();
-            ret_string += "\nPrefab Name: " + _proc.gameObject.name.Replace("(Clone)","");
-            ret_string += "\nisValid: " + !isvalid;
+            //ret_string += "\nPrefab Name: " + _proc.gameObject.name.Replace("(Clone)","");
+            ret_string += "isValid: " + !isvalid;
             //ret_string += "\nisNotPreg: " + !_proc.IsPregnant();
             ret_string += "\nPregchance= " + _proc.m_pregnancyChance;
             ret_string += "\nIsNotAlerted= " + !_proc.m_baseAI.IsAlerted();
