@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Collections;
 using System.Globalization;
+using System.Reflection;
 
 namespace AllTameable
 {
@@ -15,16 +16,39 @@ namespace AllTameable
         public static Dictionary<string, Plugin.TameTable> cfgList2 = new Dictionary<string, Plugin.TameTable>();
 
         public static string pathcfg = Path.GetDirectoryName(Paths.BepInExConfigPath) + Path.DirectorySeparatorChar + "AllTameable_TameList.cfg";
-        public static bool Init()
+
+        public static Plugin.TameTable defaultTable;
+
+        public static void print_tmtbl(string prefname, Plugin.TameTable tbl)
         {
-            cfgList2.Clear();
-            if (!File.Exists(pathcfg))
+            //commandable,tamingTime,fedDuration,consumeRange,consumeSearchInterval,consumeHeal,consumeSearchRange,consumeItem:consumeItem,changeFaction,procretion,maxCreatures,pregnancyChance,pregnancyDuration,growTime
+            string tempstr = prefname + ",";
+            try
             {
-                DBG.blogWarning("Failed to find TameList file");
-                return false;
+                
+                tempstr += tbl.commandable + ",";
+                tempstr += tbl.tamingTime + ",";
+                tempstr += tbl.fedDuration + ",";
+                tempstr += tbl.consumeRange + ",";
+                tempstr += tbl.consumeSearchInterval + ",";
+                tempstr += tbl.consumeHeal + ",";
+                tempstr += tbl.consumeSearchRange + ",";
+                tempstr += tbl.consumeItems + ",";
+                tempstr += tbl.changeFaction + ",";
+                tempstr += tbl.procretion + ",";
+                tempstr += tbl.maxCreatures + ",";
+                tempstr += tbl.pregnancyChance + ",";
+                tempstr += tbl.pregnancyDuration + ",";
+                tempstr += tbl.growTime + ",";
+                tempstr += "canmatewithself="+tbl.canMateWithSelf + ",";
             }
-            DBG.blogInfo("Found TameList file");
-            StreamReader streamreader = new StreamReader(pathcfg);
+            catch { }
+            DBG.blogDebug(tempstr);
+
+        }
+        private static void readTamelist(string path)
+        {
+            StreamReader streamreader = new StreamReader(path);
             string sline;
             while ((sline = streamreader.ReadLine()) != null)
             {
@@ -35,83 +59,107 @@ namespace AllTameable
                 }
                 sline = sline.Replace("TRUE", "true").Replace("FALSE", "false").Replace(";", "");
                 string[] arr = sline.Split(',');
-                try
-                {
+                //try
+                //{
                     Plugin.TameTable temptbl = ArrToTametable(arr);
-                    string[] prefablist = SplitMates(arr[0]);
-                    //DBG.blogDebug("prefablist="+string.Join(",", prefablist));
-                    if (prefablist.Count() >1)
+                    //DBG.blogDebug("gotoutofarrtotmtbl");
+                    if (arr[0].StartsWith("*"))
                     {
-                        //DBG.blogDebug("Count >0: "+ arr[0]);
-                        Plugin.rawMatesList.Add(arr[0]);
-                        
-                        SetCompatMates(prefablist);
-                        
-                        for (int i = 0; i < prefablist.Count(); i++)
-                        {
-                            if (!cfgList2.ContainsKey(prefablist[i]))
-                            {
-                                cfgList2.Add(prefablist[i], temptbl);
-                                DBG.blogInfo("succesfully added " + prefablist[i] + " with mates " + string.Join(", ", prefablist));
-                            }
-                        }
-                        /*
-                        for (int i = 0; i < prefablist.Count(); i++)
-                        {
-                        
-                            List<string> otherPrefabs = new List<string>();
-                            for (int j = 0; j < prefablist.Count(); j++)
-                            {
-                                
-                                if (i != j)
-                                {
-                                    otherPrefabs.Add(prefablist[j]);
-                                }
-                                
-                            }
-                            Plugin.CompatMatesList.Add(prefablist[i], otherPrefabs);
-                            if (!cfgList2.ContainsKey(prefablist[i]))
-                            {
-                                cfgList2.Add(prefablist[i], temptbl);
-                                DBG.blogInfo("succesfully added " + prefablist[i] + " with mates " + string.Join(", ", otherPrefabs));
-                            }
-                            else
-                            {
-                                DBG.blogInfo("Modified " + prefablist[i] + " with mates " + string.Join(", ", otherPrefabs));
-                            }
-                            
-                        }
-                        */
-
+                        defaultTable = (Plugin.TameTable)temptbl.Clone(); //sets the default config
+                        print_tmtbl(arr[0], temptbl);
                     }
                     else
                     {
-                        if (!cfgList2.ContainsKey(arr[0]))
+                        Plugin.TameTable tbl_toAdd = (Plugin.TameTable)temptbl.Clone();
+                        string[] prefablist = SplitMates(arr[0]);
+                        
+                        if (prefablist.Count() > 1)
                         {
-                            cfgList2.Add(arr[0], temptbl);
-                            DBG.blogInfo("succesfully added " + arr[0] + " to the tametable");
+                        DBG.blogDebug("prefablist=" + string.Join(",", prefablist));
+                        //DBG.blogDebug("Count >0: "+ arr[0]);
+                        Plugin.rawMatesList.Add(arr[0]);
+
+                            SetCompatMates(prefablist);
+
+                            for (int i = 0; i < prefablist.Count(); i++)
+                            {
+                                if (!cfgList2.ContainsKey(prefablist[i]))
+                                {
+                                    cfgList2.Add(prefablist[i], tbl_toAdd);
+                                    print_tmtbl(prefablist[i], tbl_toAdd);
+                                    DBG.blogInfo("succesfully added " + prefablist[i] + " with mates " + string.Join(", ", prefablist));
+                                }
+                            }
                         }
+                        else
+                        {
+                            if (!cfgList2.ContainsKey(arr[0]))
+                            {
+                                cfgList2.Add(arr[0], tbl_toAdd);
+                                print_tmtbl(arr[0], tbl_toAdd);
+                                DBG.blogInfo("succesfully added " + arr[0] + " to the tametable");
+                            }
+                            else
+                            {
+                                DBG.blogWarning(arr[0] + " is already in the tametable");
+                            }
+                        }
+
                     }
-                    
-                }
-                catch
+                //}
+                //catch
+                //{
+                //    DBG.blogWarning("Failed to add tametablecfg for " + arr[0]);
+                //}
+
+                /*
+                foreach (KeyValuePair<string, Plugin.TameTable> item in cfgList2)
                 {
-                    DBG.blogWarning("Failed to add tametablecfg for " + arr[0]);
+                    string key = item.Key;
+                    print_tmtbl(key, item.Value);
                 }
-                
+                */
+
 
             }
-            DBG.blogDebug("rawmateslist=" + string.Join(",", Plugin.rawMatesList));
-            DBG.blogDebug("rawtradelist= " + string.Join(",", Plugin.rawTradesList));
-            Plugin.cfgList = cfgList2;
-            return true;
+            
+        }
+        public static bool Init()
+        {
+            bool loaded_tamelist = false;
+            defaultTable = new Plugin.TameTable();
+            cfgList2.Clear();
+            string[] matches = Directory.GetFiles(@Path.GetDirectoryName(Paths.BepInExConfigPath), "AllTameable_TameList*.cfg");
+            foreach (string match in matches)
+            {
+                if (!File.Exists(match))
+                {
+                    DBG.blogDebug("Failed to Load: " + match);
+                }
+                else
+                {
+                    DBG.blogInfo("Loaded: " + match.Split(Path.DirectorySeparatorChar).Last());
+                    loaded_tamelist = true;
+                    readTamelist(match);
+                }
+            }
+            if (!loaded_tamelist)
+            {
+                return false;
+            }
+            else
+            {
+                DBG.blogDebug("rawmateslist=" + string.Join(",", Plugin.rawMatesList));
+                DBG.blogDebug("rawtradelist= " + string.Join(",", Plugin.rawTradesList));
+                Plugin.cfgList = cfgList2;
+                return true;
+            }
         }
 
         public static void SetCompatMates(string[] matelist)
         {
             for (int i = 0; i < matelist.Count(); i++)
             {
-
                 List<string> otherPrefabs = new List<string>();
                 for (int j = 0; j < matelist.Count(); j++)
                 {
@@ -122,8 +170,18 @@ namespace AllTameable
                     }
 
                 }
-                Plugin.CompatMatesList.Add(matelist[i], otherPrefabs);
-                DBG.blogInfo("succesfully Mated " + matelist[i] + " with mates " + string.Join(", ", matelist));
+                if (Plugin.CompatMatesList.ContainsKey(matelist[i]))
+                {
+                    foreach(string mate in otherPrefabs)
+                    {
+                        Plugin.CompatMatesList[matelist[i]].Add(mate);
+                    }
+                }
+                else
+                {
+                    Plugin.CompatMatesList.Add(matelist[i], otherPrefabs);
+                }
+                DBG.blogInfo("succesfully Mated " + matelist[i] + " with mates " + string.Join(", ", otherPrefabs));
 
             }
         }
@@ -198,54 +256,206 @@ namespace AllTameable
             catch
             {
             }
-            /*
-            tmtbl = arr.Select(Array => new Plugin.TameTable
-            {
-                commandable = (arr[1] == "true")
-                ,
-                tamingTime = float.Parse(arr[2])
-                ,
-                fedDuration = float.Parse(arr[3])
-                ,
-                consumeRange = float.Parse(arr[4])
-                ,
-                consumeSearchInterval = float.Parse(arr[5])
-                ,
-                consumeHeal = float.Parse(arr[6])
-                ,
-                consumeSearchRange = float.Parse(arr[7])
-                ,
-                consumeItems = arr[8]
-                ,
-                changeFaction = (arr[9] == "true")
-                ,
-                procretion = (arr[10] == "true")
-                ,
-                maxCreatures = (int.Parse(arr[11]))
-                ,
-                pregnancyChance = float.Parse(arr[12])
-                ,
-                pregnancyDuration = float.Parse(arr[13])
-                ,
-                growTime = float.Parse(arr[14])
 
-            }).ToList()[0];
-            */
-
-            tmtbl = new Plugin.TameTable();
+            int arr_len = arr.Length;
+            tmtbl = (Plugin.TameTable)defaultTable.Clone();
             String strFailed = "Failed Setting: ";
             String strbase = strFailed;
-            try { tmtbl.commandable = (arr[1] != "false"); } catch { strFailed += "commandable, "; }
-            
-            try { tmtbl.tamingTime = float.Parse(arr[2]); } catch { strFailed += "tamingtime, "; }
-            try { tmtbl.fedDuration = float.Parse(arr[3]); } catch { strFailed += "fedduration, "; }
-            try { tmtbl.consumeRange = float.Parse(arr[4]); } catch { strFailed += "consumerange, "; }
-            try { tmtbl.consumeSearchInterval = float.Parse(arr[5]); } catch { strFailed += "consumesearchinterval, "; }
-            try { tmtbl.consumeHeal = float.Parse(arr[6]); } catch { strFailed += "consumeheal, "; }
-            try { tmtbl.consumeSearchRange = float.Parse(arr[7]); } catch { strFailed += "consumesearchrange, "; }
-            try { tmtbl.consumeItems = arr[8]; } catch { strFailed += "consumeitems, "; }
-            try { tmtbl.changeFaction = (arr[9] == "true"); } catch { strFailed += "changefaction, "; }
-            if (arr[10] == "overwrite")
+            bool started_manual = false;
+            //DBG.blogDebug("arr_len="+ arr_len);
+            for (int i=1;i<=arr_len; i++) // may be out of index for 0 length
+            {
+                string error_property ="";
+                try
+                {
+                    //bool direct_assign = false;
+                    string direct_value = arr[i];
+                    if (direct_value.Length == 0)
+                    {
+                        //DBG.blogDebug("0length");
+                    }
+                    else
+                    {
+                        string switch_index = i.ToString(); //switch index to i
+                        //DBG.blogDebug("switch_index="+ switch_index);
+                        if (arr[i].Contains("="))
+                        {
+                            //DBG.blogDebug("is manual");
+                            started_manual = true;
+                            string[] split_str = arr[i].Split('=');
+                            string prop_key = split_str[0];
+                            //direct_assign = true;
+                            direct_value = split_str[1];
+                            switch_index = prop_key; //set switch to key
+
+                            //names of each property that can be assigned as float
+                            string[] float_props = new string[] { "tamingTime", "fedDuration", "consumeRange",
+                            "consumeSearchInterval","consumeHeal","consumeSearchRange","maxCreatures","pregnancyChance",
+                            "pregnancyDuration", "growTime","size"};
+                            error_property = prop_key + ", ";
+                            if (float_props.Contains(prop_key))
+                            {
+                                //DBG.blogDebug("prop_key=" + prop_key+ ", direct_value=" + direct_value);
+                                PropertyInfo prop = tmtbl.GetType().GetProperty(prop_key, BindingFlags.Public | BindingFlags.Instance);
+                                if (null != prop && prop.CanWrite) //&& prop.CanWrite
+                                {
+                                    prop.SetValue(tmtbl, float.Parse(direct_value, CultureInfo.InvariantCulture.NumberFormat), null);
+                                }
+                                else
+                                {
+                                    DBG.blogWarning("could not write value "+ prop_key);
+                                }
+                            }
+                            else if (prop_key == "consumeItems")
+                            {
+                                tmtbl.consumeItems = direct_value;
+                            }
+                            else if (prop_key == "changeFaction")
+                            {
+                                if (!isValidBool(direct_value)) { strFailed += "changeFaction(not true or false), "; }
+                                tmtbl.changeFaction = (direct_value == "true");
+                            }
+                            else if (prop_key == "commandable")
+                            {
+                                if (!isValidBool(direct_value)) { strFailed += "commandable(not true or false), "; }
+                                tmtbl.commandable = (direct_value != "false");
+                            }
+                            else if (prop_key == "procretion")
+                            {
+                                if (!isValidBool(direct_value)) { strFailed += "procretion(not true or false), "; }
+                                if (direct_value == "overwrite")
+                                {
+                                    tmtbl.procretion = true;
+                                    tmtbl.procretionOverwrite = true;
+                                }
+                                else
+                                {
+                                    tmtbl.procretion = (direct_value == "true");
+                                }
+                            }
+                            else if (prop_key == "canMateWithSelf")
+                            {
+                                if (!isValidBool(direct_value)) { strFailed += "canMateWithSelf(not true or false), "; }
+                                tmtbl.canMateWithSelf = (direct_value == "true");
+                            }
+                            else if (prop_key == "specificOffspring")
+                            {
+                                tmtbl.specificOffspringString += ","+direct_value;
+                            }
+                        }
+                        if (!started_manual)
+                        {
+                            switch (switch_index)
+                            {
+                                case "1":
+                                case "commandable":
+                                    error_property = "commandable, ";
+                                    tmtbl.commandable = (direct_value != "false");
+                                    if (!isValidBool(direct_value)) { strFailed += "commandable(not true or false), "; }
+                                    break;
+                                case "2":
+                                case "tamingTime":
+                                    error_property = "tamingTime, ";
+                                    tmtbl.tamingTime = float.Parse(direct_value);
+                                    break;
+                                case "3":
+                                case "fedDuration":
+                                    error_property = "fedDuration, ";
+                                    tmtbl.fedDuration = float.Parse(direct_value);
+                                    break;
+                                case "4":
+                                case "consumeRange":
+                                    error_property = "consumeRange, ";
+                                    tmtbl.consumeRange = float.Parse(direct_value);
+                                    break;
+                                case "5":
+                                case "consumeSearchInterval":
+                                    error_property = "consumeSearchInterval, ";
+                                    tmtbl.consumeSearchInterval = float.Parse(direct_value);
+                                    break;
+                                case "6":
+                                case "consumeHeal":
+                                    error_property = "consumeHeal, ";
+                                    tmtbl.consumeHeal = float.Parse(direct_value);
+                                    break;
+                                case "7":
+                                case "consumeSearchRange":
+                                    error_property = "consumeSearchRange, ";
+                                    tmtbl.consumeSearchRange = float.Parse(direct_value);
+                                    break;
+                                case "8":
+                                case "consumeItems":
+                                    error_property = "consumeItems, ";
+                                    tmtbl.consumeItems = direct_value;
+                                    break;
+                                case "9":
+                                case "changeFaction":
+                                    error_property = "changeFaction, ";
+                                    tmtbl.changeFaction = (direct_value == "true");
+                                    if (!isValidBool(direct_value)) { strFailed += "changeFaction(not true or false), "; }
+                                    break;
+                                case "10":
+                                case "procretion":
+                                    error_property = "procretion, ";
+                                    if (direct_value == "overwrite")
+                                    {
+                                        tmtbl.procretion = true;
+                                        tmtbl.procretionOverwrite = true;
+                                    }
+                                    else
+                                    {
+                                        tmtbl.procretion = (direct_value == "true");
+                                    }
+                                    if (!isValidBool(direct_value)) { strFailed += "procretion(not true or false), "; }
+                                    break;
+                                case "11":
+                                case "maxCreatures":
+                                    error_property = "maxCreatures, ";
+                                    tmtbl.maxCreatures = int.Parse(direct_value);
+                                    break;
+                                case "12":
+                                case "pregnancyChance":
+                                    error_property = "pregnancyChance, ";
+                                    tmtbl.pregnancyChance = float.Parse(direct_value, CultureInfo.InvariantCulture.NumberFormat);
+                                    break;
+                                case "13":
+                                case "pregnancyDuration":
+                                    error_property = "pregnancyDuration, ";
+                                    tmtbl.pregnancyDuration = float.Parse(direct_value);
+                                    break;
+                                case "14":
+                                case "growTime":
+                                    error_property = "growTime, ";
+                                    tmtbl.growTime = float.Parse(direct_value);
+                                    break;
+
+
+                                default:
+                                    error_property = "Failed and set to Default";
+                                    DBG.blogDebug("failed, set default");
+                                    break;
+                            }
+                        }
+                    }
+                }
+                catch
+                {
+                    strFailed += error_property;
+                }
+            }
+            //DBG.blogDebug("isendofarray");
+
+            /*
+            if (arr_len > 1) { try { tmtbl.commandable = (arr[1] != "false"); } catch { strFailed += "commandable, "; } }
+            if (arr_len > 2) { try { tmtbl.tamingTime = float.Parse(arr[2]); } catch { strFailed += "tamingtime, "; } }
+            if (arr_len > 3) { try { tmtbl.fedDuration = float.Parse(arr[3]); } catch { strFailed += "fedduration, "; } }
+            if (arr_len > 4) { try { tmtbl.consumeRange = float.Parse(arr[4]); } catch { strFailed += "consumerange, "; } }
+            if (arr_len > 5) { try { tmtbl.consumeSearchInterval = float.Parse(arr[5]); } catch { strFailed += "consumesearchinterval, "; } }
+            if (arr_len > 6) { try { tmtbl.consumeHeal = float.Parse(arr[6]); } catch { strFailed += "consumeheal, "; } }
+            if (arr_len > 7) { try { tmtbl.consumeSearchRange = float.Parse(arr[7]); } catch { strFailed += "consumesearchrange, "; } }
+            if (arr_len > 8) { try { tmtbl.consumeItems = arr[8]; } catch { strFailed += "consumeitems, "; } }
+            if (arr_len > 9) { try { tmtbl.changeFaction = (arr[9] == "true"); } catch { strFailed += "changefaction, "; } }
+            if (arr_len > 10) { if (arr[10] == "overwrite")
             {
                 tmtbl.procretion = true;
                 tmtbl.procretionOverwrite = true;
@@ -254,20 +464,20 @@ namespace AllTameable
             {
                 try { tmtbl.procretion = (arr[10] == "true"); } catch { strFailed += "procreation, "; }
             }
-            
-            try { tmtbl.maxCreatures = (int.Parse(arr[11])); } catch { strFailed += "tamingtime, "; }
-            try { tmtbl.pregnancyChance = float.Parse(arr[12], CultureInfo.InvariantCulture.NumberFormat); } 
-            catch { strFailed += "pregchance, "; }
-            try { tmtbl.pregnancyDuration = float.Parse(arr[13]); } catch { strFailed += "changefaction, "; }
-            try { tmtbl.growTime = float.Parse(arr[14]); } catch { strFailed += "procreation, "; }
-            if (!isValidBool(arr[1])) { strFailed += "commandable(not true or false), "; }
-            if (!isValidBool(arr[9])) { strFailed += "changeFaction(not true or false), "; }
-            if (!isValidBool(arr[10])) { strFailed += "procretion(not true or false), "; }
+            }
+            if (arr_len > 11) { try { tmtbl.maxCreatures = (int.Parse(arr[11])); } catch { strFailed += "maxCreatures, "; } }
+            if (arr_len > 12) { try { tmtbl.pregnancyChance = float.Parse(arr[12], CultureInfo.InvariantCulture.NumberFormat); } 
+            catch { strFailed += "pregchance, "; }}
+            if (arr_len > 13) { try { tmtbl.pregnancyDuration = float.Parse(arr[13]); } catch { strFailed += "pregnancyDuration, "; } }
+            if (arr_len > 14) { try { tmtbl.growTime = float.Parse(arr[14]); } catch { strFailed += "growTime, "; }}
+            if (arr_len > 1) { if (!isValidBool(arr[1])) { strFailed += "commandable(not true or false), "; } }
+            if (arr_len > 9) { if (!isValidBool(arr[9])) { strFailed += "changeFaction(not true or false), "; } }
+            if (arr_len > 10) { if (!isValidBool(arr[10])) { strFailed += "procretion(not true or false), "; } }
             if (strFailed != strbase)
             {
                 DBG.blogWarning(arr[0] + ": "+ strFailed);
             }
-
+            */
             return tmtbl;
         }
 

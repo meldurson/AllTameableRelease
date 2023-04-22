@@ -158,7 +158,7 @@ namespace AllTameable
                             foreach (ItemDrop item in _mAI.m_consumeItems)
                             {
                                 taming_text = taming_text + item.name + ", ";
-                                if (taming_text.Length - line_len > 50)
+                                if (taming_text.Length - line_len > 90)
                                 {
                                     line_len = taming_text.Length;
                                     taming_text = taming_text + "\n";
@@ -187,36 +187,59 @@ namespace AllTameable
         {
             int nrOfInstances = -10;
             int nrOfInstances2 = -10;
+            bool n_instcheck = true;
             try
             {
-                
+                if (!(_proc.m_myPrefab ?? false) | !(_proc.m_offspringPrefab ?? false)) //prefab is null
+                {
+                    DBG.blogDebug("Hover Initialised");
+                    Plugin.InitProcPrefabs(_proc);
+                    
+                }
 
                 nrOfInstances = SpawnSystem.GetNrOfInstances(_proc.m_myPrefab, _proc.gameObject.transform.position, _proc.m_totalCheckRange);
                 //DBG.blogDebug(nrOfInstances);
                 nrOfInstances2 = SpawnSystem.GetNrOfInstances(_proc.m_offspringPrefab, _proc.gameObject.transform.position, _proc.m_totalCheckRange);
                 //DBG.blogDebug("n1=" + nrOfInstances + ", n2= " + nrOfInstances2);
                 //DBG.blogDebug("_proc.m_maxCreatures=" + _proc.m_maxCreatures);
-                bool n_instcheck = nrOfInstances + nrOfInstances2 < _proc.m_maxCreatures && SpawnSystem.GetNrOfInstances(_proc.m_myPrefab, _proc.transform.position, _proc.m_partnerCheckRange, eventCreaturesOnly: false, procreationOnly: true) >= 2;
-               if (n_instcheck == true)
-                {
-                    return 0; //true
-                }
-                else if (nrOfInstances + nrOfInstances2 > _proc.m_maxCreatures)
-                {
-                    return 1;//Too crowded
-                }
-                else
-                {
-                    return 2; //Needs Mate
-                }
-                    
+                n_instcheck = nrOfInstances + nrOfInstances2 < _proc.m_maxCreatures && SpawnSystem.GetNrOfInstances(_proc.m_myPrefab, _proc.transform.position, _proc.m_partnerCheckRange, eventCreaturesOnly: false, procreationOnly: true) >= 2;
             }
             catch (Exception e)
             {
-                DBG.blogDebug("Error: "+ e.Message);
-                DBG.blogDebug("Error: " + e.StackTrace);
-                return -1; //error
+                try
+                {
+                    nrOfInstances = Plugin.Safe_GetNrOfInstances(_proc.m_myPrefab, _proc.gameObject.transform.position, _proc.m_totalCheckRange,true);
+                    //DBG.blogDebug(nrOfInstances);
+                    nrOfInstances2 = Plugin.Safe_GetNrOfInstances(_proc.m_offspringPrefab, _proc.gameObject.transform.position, _proc.m_totalCheckRange,true);
+                    //DBG.blogDebug("n1=" + nrOfInstances + ", n2= " + nrOfInstances2);
+                    //DBG.blogDebug("_proc.m_maxCreatures=" + _proc.m_maxCreatures);
+                    n_instcheck = nrOfInstances + nrOfInstances2 < _proc.m_maxCreatures && Plugin.Safe_GetNrOfInstances(_proc.m_myPrefab, _proc.transform.position, _proc.m_partnerCheckRange,true, eventCreaturesOnly: false, procreationOnly: true) >= 2;
+                }
+                catch
+                {
+                    DBG.blogDebug("Error: " + e.Message);
+                    DBG.blogDebug("Error: " + e.StackTrace);
+                    return -1; //error
+                }
+                
             }
+            if (n_instcheck == true)
+            {
+                //DBG.blogDebug("Less than max mates=" + nrOfInstances + ", offspring=" + nrOfInstances2 + ", max=" + _proc.m_maxCreatures);
+                return 0; //true
+            }
+            else if (nrOfInstances + nrOfInstances2 > _proc.m_maxCreatures-1)
+            {
+                //DBG.blogDebug("Too many mates="+ nrOfInstances+", offspring="+ nrOfInstances2 +", max="+ _proc.m_maxCreatures);
+                return 1;//Too crowded
+            }
+            else
+            {
+                DBG.blogDebug("Not enough mates=" + nrOfInstances + ", offspring=" + nrOfInstances2 + ", max=" + _proc.m_maxCreatures);
+                return 2; //Needs Mate
+            }
+                    
+            
         }
 
 

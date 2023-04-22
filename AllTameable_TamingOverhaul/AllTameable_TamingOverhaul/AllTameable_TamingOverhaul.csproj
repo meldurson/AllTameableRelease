@@ -116,6 +116,7 @@
     <Compile Include="AllTameable\CLLC.cs" />
     <Compile Include="AllTameable\AllTame_AnimalAI.cs" />
     <Compile Include="AllTameable\RPC.cs" />
+    <None Include="AllTameable\TameListCfg - v1.1.3.cs" />
     <Compile Include="AllTameable\TameListCfg.cs" />
     <Compile Include="AllTameable\BetterTameHover.cs" />
     <None Include="UnusedFiles\ConfigManager.cs" />

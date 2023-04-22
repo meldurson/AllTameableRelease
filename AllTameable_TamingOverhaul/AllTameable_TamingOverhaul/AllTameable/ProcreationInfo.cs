@@ -79,12 +79,12 @@ namespace AllTameable.CLLC
             else if (mom_infusion != CreatureInfusion.None || dad_infusion != CreatureInfusion.None)
             {
 
-                if (infusion_num > 66)
+                if (infusion_num > 60)
                 {
                     API.SetInfusionCreature(thisChar, dad_infusion);
                     //DBG.blogDebug("IsDadInf");
                 }
-                else if (infusion_num > 33)
+                else if (infusion_num > 20)
                 {
                     API.SetInfusionCreature(thisChar, mom_infusion);
                     //DBG.blogDebug("IsMomInf");
@@ -136,12 +136,12 @@ namespace AllTameable.CLLC
             else if (mom_effect != CreatureExtraEffect.None || dad_effect != CreatureExtraEffect.None)
             {
 
-                if (effect_num > 66)
+                if (effect_num > 60)
                 {
                     API.SetExtraEffectCreature(thisChar, dad_effect);
                     //DBG.blogDebug("IsDadEff");
                 }
-                else if (effect_num > 33)
+                else if (effect_num > 20)
                 {
                     API.SetExtraEffectCreature(thisChar, mom_effect);
                     //DBG.blogDebug("IsMomEff");
@@ -241,7 +241,7 @@ namespace AllTameable.CLLC
         private void SetInfo(Character other)
         {
             dad_lvl = other.GetLevel();
-            //DBG.blogDebug("dad_lvl =" + dad_lvl);
+            DBG.blogDebug("dad_lvl =" + dad_lvl);
             try
             {
                 dad_effect = API.GetExtraEffectCreature(other);
@@ -302,7 +302,11 @@ namespace AllTameable.CLLC
             DBG.blogDebug("Partner with name go:" + partner.gameObject.name + " is " + Vector3.Distance(partner.transform.position, base.transform.position) + "m away");
             if (partner != null)
             {
-                SetInfo(partner.GetComponent<Character>());
+                try
+                {
+                    SetInfo(partner.GetComponent<Character>());
+                }
+                catch { DBG.blogWarning("Error when trying to get Level of Father, Using Mothers"); }
             }
             else
             {

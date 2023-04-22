@@ -16,7 +16,7 @@ namespace AllTameable.CLLC
         //private static class Prefix_Procreation_Procreate
         //{
 
-            private static void Postfix(Procreation __instance)
+            private static void Prefix(Procreation __instance)
             {
                 if (Plugin.UseCustomProcreation.Value)
                 {
@@ -154,18 +154,13 @@ namespace AllTameable.CLLC
                         Character childchar = child.GetComponent<Character>();
                         Character growchar = growup.gameObject.GetComponent<Character>();
                         ProcreationInfo procinfo = childchar.gameObject.AddComponent<ProcreationInfo>();
-                        throw new Exception("Try to duplicate");
+                        //throw new Exception("Try to duplicate");
                         procinfo.SetGrow(growchar);
                     }
                     catch
                     {
                         DBG.blogWarning("Failed Custom Growup");
                     }
-                    
-
-
-
-                    
                 }
 
                 return child;

@@ -551,13 +551,13 @@ namespace AllTameable
                         component3 = go.AddComponent<Procreation>();
                         flag = false;
                     }
-                    component3.m_maxCreatures = tb.maxCreatures * 2;
+                    component3.m_maxCreatures = tb.maxCreatures;
                     component3.m_pregnancyChance = tb.pregnancyChance;
                     if (component3.m_pregnancyChance > 1) { component3.m_pregnancyChance *= 0.01f; }
                     if (component3.m_pregnancyChance > 1) { component3.m_pregnancyChance =0.66f; }
                     component3.m_pregnancyDuration = tb.pregnancyDuration;
-                    component3.m_partnerCheckRange = 30f;
-                    component3.m_totalCheckRange = 30f;
+                    component3.m_partnerCheckRange = 5f * tb.size;
+                    component3.m_totalCheckRange = 10f * tb.size;
                     if (flag && component3.m_offspring != null && !Plugin.CheckHuman(go) && !tb.procretionOverwrite)
                     {
                         Growup component4 = component3.m_offspring.GetComponent<Growup>();
@@ -615,7 +615,7 @@ namespace AllTameable
             catch{DBG.blogWarning("Failed to add tame to prefab: " + go.name + ", Make sure config files are formatted correctly");}
         }
 
-        private static GameObject SpawnMini(GameObject prefab)
+        public static GameObject SpawnMini(GameObject prefab, float growup_time = 600)
         {
             //DBG.blogDebug("inspawnmini");
             bool isClone = false;
@@ -691,7 +691,15 @@ namespace AllTameable
             comp.CopyBroComponet<AnimalAI, MonsterAI>(component);
             Growup growup = gameObject.AddComponent<Growup>();
             growup.m_grownPrefab = zns.GetPrefab(text);
-            growup.m_growTime = Plugin.cfgList[text].growTime;
+            if (Plugin.cfgList.ContainsKey(text))
+            {
+                growup.m_growTime = Plugin.cfgList[text].growTime;
+            }
+            else
+            {
+                growup.m_growTime = growup_time;
+            }
+            
 
             if (!Plugin.PreSetMinis)
             {

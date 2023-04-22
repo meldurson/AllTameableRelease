@@ -14,7 +14,7 @@ using UnityEngine.SceneManagement;
 
 namespace AllTameable
 {
-    [BepInPlugin("meldurson.valheim.AllTameable", "AllTameable-Overhaul", "1.1.3")]
+    [BepInPlugin("meldurson.valheim.AllTameable", "AllTameable-Overhaul", "1.1.4")]
 
     [BepInDependency("com.jotunn.jotunn", BepInDependency.DependencyFlags.HardDependency)]
     [BepInDependency("org.bepinex.plugins.creaturelevelcontrol", BepInDependency.DependencyFlags.SoftDependency)]
@@ -39,13 +39,41 @@ namespace AllTameable
             public float pregnancyChance { get; set; } = 0.33f;
             public float pregnancyDuration { get; set; } = 10f;
             public float growTime { get; set; } = 60f;
+
+            //custom features
+            public bool canMateWithSelf { get; set; } = true;
+            public string specificOffspringString { get; set; } = "";
+            public List<specificMates> ListofRandomOffspring { get; set; } = new List<specificMates>();
+            public float size { get; set; } = 1f;
             public object Clone()
             {
                 return MemberwiseClone();
             }
         }
 
-       
+        [Serializable]
+        public class specificMates : ICloneable //All the info that can be changed for a creature
+        {
+            public string prefabName { get; set; } = "";
+            public List<chanceOffspring> possibleOffspring{ get; set; } = new List<chanceOffspring>();
+            public object Clone()
+            {
+                return MemberwiseClone();
+            }
+        }
+
+        [Serializable]
+        public class chanceOffspring : ICloneable //All the info that can be changed for a creature
+        {
+            public GameObject offspring { get; set; } = null;
+            public float chance { get; set; } = 0;
+            public object Clone()
+            {
+                return MemberwiseClone();
+            }
+        }
+
+
 
 
 
@@ -727,46 +755,88 @@ namespace AllTameable
 
         */ // old getnrinstances
 
-        private static int Safe_GetNrOfInstances(GameObject prefab, Vector3 center, float maxRange, bool eventCreaturesOnly, bool procreationOnly)
+        public static int Safe_GetNrOfInstances(GameObject prefab, Vector3 center, float maxRange, bool isError, bool eventCreaturesOnly =false, bool procreationOnly=false)
         {
+            if (isError)
+            {
+                DBG.blogWarning("****Failed Default Number of Instances****");
+                DBG.blogDebug("Prefab is null= " + !(prefab ?? false));
+                try { DBG.blogDebug("center: = " + center); } catch { }
+                try { DBG.blogDebug("maxRange: = " + maxRange); } catch { }
+                try { DBG.blogDebug("eventCreaturesOnly: = " + eventCreaturesOnly); } catch { }
+                try { DBG.blogDebug("procreationOnly: = " + procreationOnly); } catch { }
+                try { DBG.blogDebug("prefab.transform: = " + prefab.transform); } catch { }
+                try { DBG.blogDebug("prefab.name: = " + prefab.name); } catch { }
+                try { DBG.blogDebug("prefab.gameObject.name: = " + prefab.gameObject.name); } catch { }
+                try { DBG.blogDebug("prefab.ToString(): = " + prefab.ToString()); } catch { }
+                try { DBG.blogDebug("prefab.GetComponent<BaseAI>() != null: = " + prefab.GetComponent<BaseAI>() != null);} catch { }
+                
+
+
+            }
             string text = prefab.name + "(Clone)";
             if (prefab.GetComponent<BaseAI>() != null)
             {
+                
                 List<BaseAI> allInstances = BaseAI.GetAllInstances();
                 int num = 0;
+                if (isError)
                 {
-                    foreach (BaseAI item in allInstances)
+                    try { DBG.blogWarning("allInstances:= " + allInstances.Count); } catch { }
+                }
+                
+                foreach (BaseAI item in allInstances)
+                {
+                    if (isError)
                     {
-                        if (item.gameObject.name != text || (maxRange > 0f && Vector3.Distance(center, item.transform.position) > maxRange))
+                        try { DBG.blogDebug("item.gameObject.name:= " + item.gameObject.name); } catch { }
+                        try { DBG.blogDebug("Vector3.Distance(center, item.transform.position:= " + Vector3.Distance(center, item.transform.position)); } catch { }
+                        MonsterAI monsterAI = item as MonsterAI;
+                        Procreation component = item.GetComponent<Procreation>();
+                        try {DBG.blogDebug("MonsterAI:= " + monsterAI); } catch { }
+                        try { DBG.blogDebug("!monsterAI.IsEventCreature():= " + !monsterAI.IsEventCreature()); } catch { }
+                        try { DBG.blogDebug("component:= " + component); } catch { }
+                        try { DBG.blogDebug("!component.ReadyForProcreation():= " + !component.ReadyForProcreation()); } catch { }
+                    }
+                    if (item.gameObject.name != text || (maxRange > 0f && Vector3.Distance(center, item.transform.position) > maxRange))
+                    {
+                        continue;
+                    }
+                    if (eventCreaturesOnly)
+                    {
+                        MonsterAI monsterAI = item as MonsterAI;
+                        if ((bool)monsterAI && !monsterAI.IsEventCreature())
                         {
                             continue;
                         }
-                        if (eventCreaturesOnly)
-                        {
-                            MonsterAI monsterAI = item as MonsterAI;
-                            if ((bool)monsterAI && !monsterAI.IsEventCreature())
-                            {
-                                continue;
-                            }
-                        }
-                        if (procreationOnly)
-                        {
-                            Procreation component = item.GetComponent<Procreation>();
-                            if ((bool)component && !component.ReadyForProcreation())
-                            {
-                                continue;
-                            }
-                        }
-                        num++;
                     }
-                    return num;
+                    if (procreationOnly)
+                    {
+                        Procreation component = item.GetComponent<Procreation>();
+                        if ((bool)component && !component.ReadyForProcreation())
+                        {
+                            continue;
+                        }
+                    }
+                    num++;
                 }
+                return num;
+                
             }
             GameObject[] array = GameObject.FindGameObjectsWithTag("spawned");
+            if (isError)
+            {
+                try { DBG.blogWarning("array:= " + array); } catch { }
+            }
             int num2 = 0;
             GameObject[] array2 = array;
             foreach (GameObject gameObject in array2)
             {
+                if (isError)
+                {
+                    try { DBG.blogDebug("gameObject.name:= " + gameObject.name); } catch { }
+                    try { DBG.blogDebug("Vector3.Distance(center, gameObject.transform.position:= " + Vector3.Distance(center, gameObject.transform.position)); } catch { }
+                }
                 if (gameObject.name.StartsWith(text) && (!(maxRange > 0f) || !(Vector3.Distance(center, gameObject.transform.position) > maxRange)))
                 {
                     num2++;
@@ -774,6 +844,324 @@ namespace AllTameable
             }
             return num2;
         }
+        
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(Procreation), "Procreate")]
+
+        private static void PrefixProcreation(Procreation __instance)
+        {
+            if (!(__instance.m_myPrefab ?? false) | !(__instance.m_offspringPrefab ?? false)) //prefab is null
+            {
+                //DBG.blogDebug("Procreation Initialised Prefabs");
+                InitProcPrefabs(__instance);
+            }
+            else
+            {
+
+            }
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(Procreation), "MakePregnant")]
+
+        private static void PostfixMakePregnant(Procreation __instance)
+        {
+            string prefname = __instance.name.Replace("(Clone)", ""); ;
+            //DBG.blogDebug("prefname=" + prefname);
+            //get offspring
+            if (cfgList.TryGetValue(prefname, out TameTable cfgfile))
+            {
+                DBG.blogDebug("found prefab, " +prefname);
+                if ((cfgfile.specificOffspringString + "") != "")
+                {
+                    //DBG.blogDebug("specificOffspringString=" + cfgfile.specificOffspringString);
+                    if (cfgfile.ListofRandomOffspring.Count() == 0)
+                    {
+                        initRandomOffspring(cfgfile, __instance);
+                    }
+                    changeOffspring(__instance, cfgfile.ListofRandomOffspring);
+                }
+            }
+        }
+
+        private static void initRandomOffspring(TameTable tmtbl, Procreation proc)
+        {
+            //List<string[]> partnerList = new List<string[]>();
+            DBG.blogDebug("initOffspring");
+            
+            List<specificMates> specMates = new List<specificMates>();
+            Dictionary<string, string> partnersDict = new Dictionary<string, string>();
+            string[] partners = tmtbl.specificOffspringString.Split(',');
+            //DBG.blogDebug(partners.ToString());
+            partners = partners.Skip(1).ToArray();
+            //DBG.blogDebug(partners.ToString());
+            foreach (string combinedValue in partners)
+            {
+                string[] splitValue = combinedValue.Replace(")", "").Split('(');
+                partnersDict.Add(splitValue[0], splitValue[1]);
+                //DBG.blogDebug("key=" + splitValue[0] + ", value=" + splitValue[1]);
+                specificMates addPartner = new specificMates();
+                addPartner.prefabName = splitValue[0];
+                string[] prefchances = splitValue[1].Split('/');
+                float totalchance = 0;
+                foreach (string chancepkg in prefchances)
+                {
+                    chanceOffspring chanceoff = new chanceOffspring();
+                    string[] pref_and_chance = chancepkg.Split(':');
+                    string prefname = pref_and_chance[0];
+                    GameObject mate_go = ZNetScene.instance.GetPrefab(prefname);
+                    if (mate_go != null)
+                    {
+                        DBG.blogDebug("found go for " + mate_go.name);
+                        //Procreation mate_proc = mate_go.GetComponent<Procreation>();
+                        if (mate_go.GetComponent<Procreation>() != null)
+                        {
+                            chanceoff.offspring = mate_go.GetComponent<Procreation>().m_offspring;
+                            DBG.blogDebug("chanceoff.offspring=" + chanceoff.offspring.name);
+                        }
+                        else
+                        {
+                            Growup this_growup = proc.m_offspring.GetComponent<Growup>();
+                            if(this_growup != null)
+                            {
+                                chanceoff.offspring = PetManager.SpawnMini(mate_go, this_growup.m_growTime);
+                            }
+                            else
+                            {
+                                DBG.blogDebug("growup null");
+                                chanceoff.offspring = PetManager.SpawnMini(mate_go);
+                            }
+                            
+                            DBG.blogDebug("chanceoff.offspring=" + chanceoff.offspring.name);
+                        }
+                        try { chanceoff.chance = float.Parse(pref_and_chance[1]); }
+                        catch { DBG.blogWarning("Not a valid float for chance for "+proc.name); }
+                        //DBG.blogDebug("chanceoff.chance=" + chanceoff.chance);
+                        totalchance += chanceoff.chance;
+                        addPartner.possibleOffspring.Add(chanceoff);
+                    }
+                    else
+                    {
+                        DBG.blogWarning("could not find prefab:" + prefname + " when trying to mate with " + proc.name);
+                    }
+                    
+                }
+                DBG.blogDebug("totalchance=" + totalchance);
+                if (totalchance < 100)
+                {
+                    chanceOffspring defaultOff = new chanceOffspring();
+                    defaultOff.chance = 100 - totalchance;
+                    defaultOff.offspring = proc.m_offspring;
+                    addPartner.possibleOffspring.Add(defaultOff);
+                }
+                specMates.Add(addPartner);
+
+            }
+            tmtbl.ListofRandomOffspring = specMates;
+            foreach (specificMates specmates in tmtbl.ListofRandomOffspring)
+            {
+                DBG.blogDebug("specmates.prefabName=" + specmates.prefabName);
+                foreach (chanceOffspring chancepkg in specmates.possibleOffspring)
+                {
+                    DBG.blogDebug("     chancepkg.offspring.name=" + chancepkg.offspring.name);
+                    DBG.blogDebug("     chancepkg.chance=" + chancepkg.chance);
+                }
+            }
+        }
+        private static void changeOffspring(Procreation proc, List<specificMates> mates)
+        {
+            DBG.blogDebug("changeOffspring");
+            /*
+            //List<string[]> partnerList = new List<string[]>();
+            DBG.blogDebug("changeOffspring");
+            Dictionary<string, string> partnersDict = new Dictionary<string, string>();
+            string[] partners = spec_str.Split(',');
+            //DBG.blogDebug(partners.ToString());
+            partners = partners.Skip(1).ToArray();
+            //DBG.blogDebug(partners.ToString());
+            foreach(string combinedValue in partners)
+            {
+                string[] splitValue = combinedValue.Replace(")", "").Split('(');
+                partnersDict.Add(splitValue[0], splitValue[1]);
+                DBG.blogDebug("key=" + splitValue[0]+", value="+ splitValue[1]);
+            }
+            */
+            Character partner = getPartner(proc.GetComponentInParent<BaseAI>());
+            string prefname = partner.name.Replace("(Clone)", "");
+            DBG.blogDebug("partner=" + prefname);
+            specificMates foundMate = null;
+            foreach (specificMates mate in mates)
+            {
+                if(mate.prefabName == prefname)
+                {
+                    foundMate = mate;
+                    break;
+                }
+            }
+            if (foundMate != null)
+            {
+                //foundMate.possibleOffspring
+                float rndm = UnityEngine.Random.Range(0f, 100f);
+                float currentchance = 0;
+                
+                foreach(chanceOffspring chanceOff in foundMate.possibleOffspring)
+                {
+                    currentchance += chanceOff.chance;
+                    if(currentchance>= rndm)
+                    {
+                        DBG.blogDebug("currentchance=" + currentchance + ", rndm=" + rndm);
+                        proc.m_offspring = chanceOff.offspring;
+                        proc.m_offspringPrefab = chanceOff.offspring;
+                        DBG.blogDebug("proc.m_offspring=" + proc.m_offspring.name);
+                        break;
+                    }
+                }
+            }
+            /*
+            if(partnersDict.TryGetValue(partner.name.Replace("(Clone)", ""), out var chancesStr))
+            {
+                DBG.blogDebug("chancesStr=" + chancesStr);
+                string[] prefchances = chancesStr.Split('/');
+                float rndm = UnityEngine.Random.Range(0, 100);
+                float currentchance = 0;
+                foreach(string chancepkg in prefchances)
+                {
+                    string[] pref_and_chance = chancepkg.Split(':');
+                    string prefname = pref_and_chance[0];
+                    float chance = 0;
+                    try {chance = float.Parse(pref_and_chance[1]);}catch { }
+                    currentchance = Mathf.Min(100, currentchance + chance);
+                    DBG.blogDebug("currentchance=" + currentchance + ", rndm=" + rndm);
+                    if(currentchance > rndm)
+                    {
+                        GameObject mate_go = ZNetScene.instance.GetPrefab(prefname);
+                        if (mate_go != null)
+                        {
+                            DBG.blogDebug("found go for " + mate_go.name);
+                            Procreation mate_proc = mate_go.GetComponent<Procreation>();
+                            if(mate_go.GetComponent<Procreation>() != null)
+                            {
+
+                                proc.m_offspringPrefab = mate_go.GetComponent<Procreation>().m_offspring;
+                                DBG.blogDebug("proc.m_offspring=" + proc.m_offspring.name);
+                                break;
+                            }
+
+                        }
+                        else
+                        {
+                            DBG.blogWarning("could not find prefab:" + prefname + " when trying to mate with " + proc.name);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                Procreation partner_proc = partner.GetComponentInParent<Procreation>();
+
+                DBG.blogDebug("partner offspring=" + partner_proc.m_offspringPrefab.name);
+            }
+            */
+            
+        }
+
+        public static Character getPartner(BaseAI baseAI)
+        {
+            Character partner = null;
+            float num = 999999f;
+            //BaseAI baseAI = GetComponentInParent<BaseAI>();
+            List<Character> characters = Character.GetAllCharacters();
+            //DBG.blogDebug("This char is:" + baseai.gameObject.name);
+            //List<string> possiblemates = Plugin.CompatMatesList[baseai.gameObject.name];
+            if (!Plugin.CompatMatesList.TryGetValue(Utils.GetPrefabName(baseAI.gameObject), out var possiblemates))
+            {
+                possiblemates = new List<string> { Utils.GetPrefabName(baseAI.gameObject) };
+            }
+            List<string> clonemates = new List<string>();
+            ZNetScene zns = ZNetScene.instance;
+            clonemates.Add(baseAI.gameObject.name);
+            foreach (string str in possiblemates)
+            {
+                clonemates.Add(str + "(Clone)");
+            }
+            // DBG.blogDebug("clonemates= " + string.Join(":", clonemates));
+
+            foreach (Character character in characters)
+            {
+                if (!(character.gameObject == baseAI.gameObject) && clonemates.Contains(character.gameObject.name) && character.GetComponent<ZNetView>().IsValid())// && !(Vector3.Distance(character.transform.position, base.transform.position) > 40))
+                {
+
+                    float num2 = Vector3.Distance(character.transform.position, baseAI.transform.position);
+                    if (num2 < num)
+                    {
+                        DBG.blogDebug("character with name go:" + character.gameObject.name + " is " + Vector3.Distance(character.transform.position, baseAI.transform.position) + "m away");
+                        partner = character;
+                        num = num2;
+                    }
+
+                }
+                //if (clonemates.Contains(character.gameObject.name))
+                //{
+                //    DBG.blogDebug("found clone with name " + character.gameObject.name);
+                //}
+            }
+            return partner;
+        }
+
+
+        public static void InitProcPrefabs(Procreation _proc)
+        {
+            string prefabName = Utils.GetPrefabName(_proc.m_offspring);
+            _proc.m_offspringPrefab = ZNetScene.instance.GetPrefab(prefabName);
+            int prefab = _proc.m_nview.GetZDO().GetPrefab();
+            _proc.m_myPrefab = ZNetScene.instance.GetPrefab(prefab);
+            //DBG.blogDebug("Initialised Proc Prefabs");
+            if (!(_proc.m_myPrefab ?? false))
+            {
+                DBG.blogDebug("m_myPrefab is still Null, trying again");
+                DBG.blogDebug(_proc.name);
+
+                string proc_name = _proc.name.Replace("(Clone)", "");
+                DBG.blogDebug("proc_name=" + proc_name);
+                if (ZNetScene.instance.GetPrefab(proc_name) == null)
+                {
+                    DBG.blogDebug("proc_name failed");
+                }
+                else
+                {
+                    _proc.m_myPrefab = ZNetScene.instance.GetPrefab(proc_name);
+                }
+                if (!(_proc.m_myPrefab ?? false))
+                {
+                    DBG.blogDebug("m_myPrefab backup failed");
+                }
+                else
+                {
+                    DBG.blogDebug("m_myPrefab backup success");
+                }
+            }
+            if (!(_proc.m_offspringPrefab ?? false))
+            {
+                DBG.blogDebug("m_offspringPrefab is still Null, trying again");
+                string proc_offspring_name = _proc.m_offspring.name;
+                DBG.blogDebug("Failed prefabName=" + prefabName);
+                //_proc.m_offspringPrefab = ZNetScene.instance.GetPrefab(proc_offspring_name);
+
+                _proc.m_offspringPrefab = _proc.m_offspring;
+                if (!(_proc.m_offspringPrefab ?? false))
+                {
+
+                    DBG.blogDebug("m_offspringPrefab backup failed :"+ (_proc.m_offspringPrefab==null));
+                }
+                else
+                {
+                    DBG.blogDebug("m_offspringPrefab backup success");
+                }
+
+            }
+        }
+
+
 
         [HarmonyPostfix]
         [HarmonyPatch(typeof(SpawnSystem), "GetNrOfInstances", new Type[] { typeof(GameObject), typeof(Vector3),typeof(float),typeof(bool),typeof(bool) })]
@@ -788,6 +1176,17 @@ namespace AllTameable
                 {
                     if (CompatMatesList.TryGetValue(prefab.name, out List<string> mates))
                     {
+                        //DBG.blogDebug("Has more mates");
+                        if (cfgList.TryGetValue(prefab.name, out TameTable cfgfile)) 
+                        {
+                            if (!cfgfile.canMateWithSelf)
+                            {
+                                int previous_sum = sum-1;
+                                sum = 1;
+                                //DBG.blogDebug("Cannot Mate with same prefab, " + previous_sum + " removed from total nearby, " +
+                                //    "newsum ="+ sum);
+                            }
+                        }
                         ZNetScene zns = ZNetScene.instance;
                         foreach (var mate in mates)
                         {
@@ -796,7 +1195,7 @@ namespace AllTameable
                                 int added = 0;
                                 try
                                 {
-                                    added = Safe_GetNrOfInstances(zns.GetPrefab(mate), center, maxRange, eventCreaturesOnly, procreationOnly);
+                                    added = Safe_GetNrOfInstances(zns.GetPrefab(mate), center, maxRange, false, eventCreaturesOnly, procreationOnly);
                                 }
                                 catch 
                                 { 
@@ -805,7 +1204,7 @@ namespace AllTameable
                                 } //if fails do not add
                                 if (added > 0)
                                 {
-                                    DBG.blogDebug("Added " + added + " of " + mate + "to instnum for " + prefab.name);
+                                    //DBG.blogDebug("Added " + added + " of " + mate + "to instnum for " + prefab.name);
                                 }
                                 sum += added;
                             }
@@ -819,6 +1218,7 @@ namespace AllTameable
                 }
                 catch { DBG.blogDebug("Error in finding mate for " + prefab.name); }
             }
+            __result = sum;
             return;
         }
 
@@ -871,6 +1271,8 @@ namespace AllTameable
         public static ConfigEntry<bool> HealOnConsume;
 
         public static ConfigEntry<bool> OverrideHealValue;
+
+        public static ConfigEntry<float> TamedFedMultiplier;
 
         public static ManualLogSource logger;
 
@@ -942,6 +1344,8 @@ namespace AllTameable
                 new ConfigDescription("Determines if you want to have tames heal a set amount on consume(pre H&H), or leave default with only regen occurring when not hungry ", null, new ConfigurationManagerAttributes { IsAdminOnly = true }));
             OverrideHealValue = base.Config.Bind("1General", "UseListHealValues", defaultValue: true,
                 new ConfigDescription("Determines if you want to use the consumeheal values from the TameList, if set to false will heal 10% of max health when consuming", null, new ConfigurationManagerAttributes { IsAdminOnly = true }));
+            TamedFedMultiplier = base.Config.Bind("1General", "TamedFedMultiplier", defaultValue: 1f,
+                new ConfigDescription("Determines if after being tamed how much longer the creature will stay fed", null, new ConfigurationManagerAttributes { IsAdminOnly = true }));
 
             listloaded = TameListCfg.Init();
             if (!listloaded)
