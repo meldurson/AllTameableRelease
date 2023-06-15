@@ -10,7 +10,7 @@ using System.Runtime.Serialization.Formatters.Binary;
 namespace AllTameable.RPC
 {
     [Serializable]
-    internal class CfgPackage
+    public class CfgPackage
     {
         //public Dictionary<string, Plugin.TameTable> cfgList;
 
@@ -20,7 +20,25 @@ namespace AllTameable.RPC
         public Plugin.TameTable[] split_tmtbl;
         public string[] mate_dict;
         public string[] trade_dict;
-        
+        public static ZPackage zpack = null;
+
+
+        public ZPackage PackTamelist()
+        {
+            if (zpack == null)
+            {
+                Pack();
+                DBG.blogDebug("Packed List");
+            }
+            else
+            {
+                DBG.blogDebug("Already Packed List");
+            }
+            ZPackage package = new ZPackage();
+            package = zpack;
+            return package;
+        }
+
         public ZPackage Pack()
         {
             //cfgList = Plugin.cfgList;
@@ -53,12 +71,13 @@ namespace AllTameable.RPC
                 }
                 byte[] buffer = memstream.GetBuffer();
                 packedpkg.Write(buffer);
+                zpack = packedpkg;
                 return packedpkg;
             }
         }
 
 
-        public static void Unpack(ZPackage package)
+        public static void Unpack(ZPackage package,bool setValue = true)
         {
             byte[] array = package.ReadByteArray();
             DBG.blogInfo($"Deserializing {array.Length} bytes of configs");
@@ -76,9 +95,9 @@ namespace AllTameable.RPC
                         string[] newsplit_keys = configPackage.split_keys;
                         Plugin.TameTable[] newsplit_tmtbl = configPackage.split_tmtbl;
                         Combinesplitdict(newsplit_keys, newsplit_tmtbl);
-                        Plugin.rawMatesList = configPackage.mate_dict.ToList();
+                        if (setValue) { Plugin.rawMatesList = configPackage.mate_dict.ToList(); }
                         DBG.blogDebug("rawmatesList:" + string.Join(",",configPackage.mate_dict));
-                        Plugin.rawTradesList = configPackage.trade_dict.ToList();
+                        if (setValue) { Plugin.rawTradesList = configPackage.trade_dict.ToList(); }
                         DBG.blogDebug("rawtradesList:" + string.Join(",", configPackage.trade_dict));
                         //ConfigurationManager.GeneralConfig = configPackage.GeneralConfig;
                         //ConfigurationManager.SimpleConfig = configPackage.SimpleConfig;

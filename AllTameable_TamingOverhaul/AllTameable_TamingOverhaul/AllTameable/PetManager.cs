@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace AllTameable
 {
-    internal class PetManager : MonoBehaviour
+    public class PetManager : MonoBehaviour
     {
         private static ZNetScene zns;
 
@@ -84,6 +84,7 @@ namespace AllTameable
         public static void UpdatesFromServer() //Reinitializes after receiving config from server
         {
             isInit = true;
+
             zns = ZNetScene.instance;
             //Plugin.PreSetMinis = false;
             wtame = zns.GetPrefab("Wolf").GetComponent<Tameable>();
@@ -505,7 +506,7 @@ namespace AllTameable
                 }
 
                 component.m_tamingTime = tb.tamingTime;
-                component.m_fedDuration = tb.fedDuration;
+                component.m_fedDuration = tb.fedDuration *Plugin.TamedFedMultiplier.Value;
                 component2.m_consumeRange = tb.consumeRange;
                 component2.m_consumeSearchInterval = tb.consumeSearchInterval;
                 //component2.m_consumeHeal = tb.consumeHeal;
@@ -568,6 +569,7 @@ namespace AllTameable
                     {
                         component3.m_offspring = DragonEgg;
                     }
+                    /*
                     else if ((go.name == "Seeker" | go.name == "SeekerBrute") && Plugin.SeekerBroodOffspring.Value)
                     {
                         DBG.blogDebug("Setting " + go.name + " Offspring to Seeker Brood");
@@ -583,11 +585,13 @@ namespace AllTameable
                         }
 
                     }
+                    */
                     else
                     {
                         //DBG.blogDebug("setting spawnmini");
 
                         component3.m_offspring = SpawnMini(go);
+                        
                     }
                     //DBG.blogDebug("Pregnancy duration is :"+ component3.m_pregnancyDuration);
 
@@ -611,6 +615,19 @@ namespace AllTameable
                     }
                     DBG.blogDebug("Added ability to tame to " + go.name);
                 }
+                if (tb.offspringOnly)
+                {
+                    DBG.blogDebug("Removing Tameable from " + go.name +" due to only being from procreation");
+                    if (go.GetComponent<Tameable>() != null)
+                    {
+                        Object.DestroyImmediate(go.GetComponent<Tameable>());
+                    }
+                    if (go.GetComponent<Procreation>() != null)
+                    {
+                        Object.DestroyImmediate(go.GetComponent<Procreation>());
+                    }
+                }
+
             }
             catch{DBG.blogWarning("Failed to add tame to prefab: " + go.name + ", Make sure config files are formatted correctly");}
         }

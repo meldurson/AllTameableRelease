@@ -57,7 +57,7 @@ namespace AllTameable
                 {
                     continue;
                 }
-                sline = sline.Replace("TRUE", "true").Replace("FALSE", "false").Replace(";", "");
+                sline = sline.Replace("TRUE", "true").Replace("FALSE", "false").Replace(";", "").Replace(" ", "");
                 string[] arr = sline.Split(',');
                 //try
                 //{
@@ -207,7 +207,7 @@ namespace AllTameable
 
             foreach (string str in rawtrades)
             {
-                DBG.blogDebug(rawtrades.ToString());
+                //DBG.blogDebug(rawtrades.ToString());
                 AddTradeList(str.Split(',')[0], str.Split(',')[1],true);
             }
             DBG.blogDebug("Trades Unpacked");
@@ -309,6 +309,11 @@ namespace AllTameable
                             else if (prop_key == "consumeItems")
                             {
                                 tmtbl.consumeItems = direct_value;
+                            }
+                            else if (prop_key == "offspringOnly")
+                            {
+                                if (!isValidBool(direct_value)) { strFailed += "offspringOnly(not true or false), "; }
+                                tmtbl.offspringOnly = (direct_value != "false");
                             }
                             else if (prop_key == "changeFaction")
                             {

@@ -6,11 +6,16 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
+using UnityEngine;
+using Jotunn.Entities;
+using System.Collections;
+using Jotunn.Managers;
 
 namespace AllTameable.RPC
 {
-    public static class RPC
+    public class RPC
     {
+        public static ZPackage tamelistPkg = null;
         /*
         [HarmonyPatch(typeof(Game), "Start")]
         public static class GameStartPatch
@@ -25,46 +30,278 @@ namespace AllTameable.RPC
         }
         */
         //****************************Start New Code**************************
+
+        /*
         [HarmonyPrefix]
         [HarmonyPatch(typeof(ZNet), "OnNewConnection")]
         //private static class Postfix_ZNet_OnNewConnection
         //{
-            private static void Prefix(ref ZNet __instance, ZNetPeer peer)
+            private static void PrefixOnNewConnection(ref ZNet __instance, ZNetPeer peer)
             {
                 DBG.blogDebug("RPC_OnNewConnection");
                 if (ZNet.instance.IsServer())
                 {
-                    DBG.blogDebug("RPC_Received Registered");
-                    peer.m_rpc.Register("RPC_RequestConfigsAllTameable", (RPC.RPC_RequestConfigsAllTameable));
+                    DBG.blogDebug("RPC_Received Registered"); //Add rpc to client allowing request data
+                    //peer.m_rpc.Register("RPC_RequestConfigsAllTameable", (RPC.RPC_RequestConfigsAllTameable));
                     return;
                 }
-                DBG.blogDebug("RPC_registered in client");
+                DBG.blogDebug("RPC_registered in client"); //add rpc to server allowing to send data
                 peer.m_rpc.Register<ZPackage>("RPC_ReceiveConfigsAllTameable", (RPC.RPC_ReceiveConfigsAllTameable));
-                peer.m_rpc.Invoke("RPC_RequestConfigsAllTameable");
             }
-        //}
-        private static void RPC_ReceiveConfigsAllTameable(ZRpc rpc, ZPackage pkg)
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(ZNet), "OnNewConnection")]
+        private static void PostfixOnNewConnection(ref ZNet __instance, ZNetPeer peer)
         {
-            DBG.blogDebug("RPC_received");
             if (!ZNet.instance.IsServer())
             {
-                if (pkg != null && pkg.Size() > 0)
-                { // Confirm our Server is sending the RPC
-                  //string announcement = pkg.ReadString();
-                    CfgPackage.Unpack(pkg);
-                    PetManager.UpdatesFromServer();
+                DBG.blogDebug("Invoking Request");
+                peer.m_rpc.Invoke("RPC_RequestConfigsAllTameable");
+            }
+        }
+       
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(ZNet), "Connect", new Type[] { typeof(ISocket) })]
+        private static void PostfixConnect(ref ZNet __instance,ISocket socket, ref ZNetPeer __result)
+        {
+            DBG.blogDebug("ZNet Connect");
+            
+            if (__result != null)
+            {
+                DBG.blogDebug("Connect not Null");
+                if (ZNet.instance.IsServer())
+                {
+                    DBG.blogDebug("Is Server");
+                    __result.m_rpc.Register("RPC_RequestConfigsAllTameable", (RPC.RPC_RequestConfigsAllTameable));
+                    return;
                 }
+                __result.m_rpc.Register<ZPackage>("RPC_ReceiveConfigsAllTameable", (RPC.RPC_ReceiveConfigsAllTameable));
+                if (!Plugin.ReceivedServerConfig)
+                {
+                    DBG.blogDebug("Invoking Request2");
+                    __result.m_rpc.Invoke("RPC_RequestConfigsAllTameable");
+                }
+                else
+                {
+                    DBG.blogDebug("Already Loaded Request");
+                }
+                
+            }
+
+        }
+        */
+        //*****Jotunn code
+
+        /*
+        // React to the RPC call on a server
+        private IEnumerator jot_RPCServerReceive(long sender, ZPackage package)
+        {
+            Jotunn.Logger.LogMessage($"Received blob, processing");
+
+            string dot = string.Empty;
+            for (int i = 0; i < 5; ++i)
+            {
+                dot += ".";
+                Jotunn.Logger.LogMessage(dot);
+                yield return OneSecondWait;
+            }
+
+            Jotunn.Logger.LogMessage($"Broadcasting to all clients");
+            Plugin.jot_TamelistRPC.SendPackage(ZNet.instance.m_peers, new ZPackage(package.GetArray()));
+        }
+
+        public static readonly WaitForSeconds HalfSecondWait = new WaitForSeconds(0.5f);
+        public static readonly WaitForSeconds OneSecondWait = new WaitForSeconds(1f);
+
+        // React to the RPC call on a client
+        private IEnumerator jot_RPCClientReceive(long sender, ZPackage package)
+        {
+            Jotunn.Logger.LogMessage($"Received blob, processing");
+            yield return null;
+
+            string dot = string.Empty;
+            for (int i = 0; i < 10; ++i)
+            {
+                dot += ".";
+                Jotunn.Logger.LogMessage(dot);
+                yield return HalfSecondWait;
             }
         }
 
-        private static void RPC_RequestConfigsAllTameable(ZRpc rpc)
+        */
+        /*
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(ZNet), "OnNewConnection")]
+        private static void PostfixOnNewConnection(ref ZNet __instance, ZNetPeer peer)
+        {
+            if (ZNet.instance.IsServer())
+            {
+                if (tamelistPkg == null)
+                {
+                    DBG.blogDebug("Packing Tamelist Pkg");
+                    tamelistPkg = new CfgPackage().Pack();
+                }
+                //peer.m_uid
+                DBG.blogDebug("Sending Tamelist RPC");
+                Plugin.jot_TamelistRPC.SendPackage(peer.m_uid, tamelistPkg);
+                //Plugin.jot_TamelistRPC.Initiate();
+            }
+
+
+        }
+        */
+
+
+            /*
+
+            //****retry code*****
+            [HarmonyPrefix]
+            [HarmonyPatch(typeof(ZNet), "OnNewConnection")]
+            private static void PrefixOnNewConnection(ref ZNet __instance, ZNetPeer peer)
+            {
+                DBG.blogDebug("RPC_OnNewConnection");
+                //if server, register rpc in client to be able to request data and receive data
+                //if client, register rpc to be able send data to client
+                RegisterListRPC(__instance, peer);
+
+            }
+
+            [HarmonyPostfix]
+            [HarmonyPatch(typeof(ZNet), "OnNewConnection")]
+            private static void PostfixOnNewConnection(ref ZNet __instance, ZNetPeer peer)
+            {
+                if (ZNet.instance.IsServer())
+                {
+                    DBG.blogDebug("Postfix Asking Client to Request Server Config");
+                    RPC_RequestConfigsAllTameable(peer.m_rpc);
+                    //peer.m_rpc.Invoke("RPC_RequestConfigsAllTameable");
+                }
+                else
+                {
+
+                    if (!Plugin.ReceivedServerConfig)
+                    {
+                        DBG.blogDebug("Requesting Server Config OnNewConnection");
+                        peer.m_rpc.Invoke("RPC_RequestConfigsAllTameable");
+                    }
+                }
+            }
+
+            [HarmonyPostfix]
+            [HarmonyPatch(typeof(ZNet), "Connect", new Type[] { typeof(ISocket) })]
+            private static void PostfixConnect(ref ZNet __instance, ISocket socket, ref ZNetPeer __result)
+            {
+                if (!ZNet.instance.IsServer())
+                {
+                    DBG.blogDebug("Connected");
+                    __result.m_rpc.Register<ZNetPeer>("RPC_SelfRegisterListRPC", (RPC.SelfRegisterListRPC));
+                    __result.m_rpc.Invoke("RPC_SelfRegisterListRPC", __result);
+                }
+            }
+
+            */
+
+
+            private static void RegisterListRPC(ZNet znet, ZNetPeer peer)
+        {
+            //if server, register rpc in client to be able to request data and receive data
+            //if client, register rpc to be able send data to client
+            DBG.blogDebug("RPC_Register");
+            if (ZNet.instance.IsServer())
+            {
+                DBG.blogDebug("RPC is Server");
+                peer.m_rpc.Register("RPC_RequestConfigsAllTameable", (RPC.RPC_RequestConfigsAllTameable));
+                
+            }
+            else
+            {
+                DBG.blogDebug("RPC is Client");
+                peer.m_rpc.Register<ZPackage>("RPC_ReceiveConfigsAllTameable", (RPC.RPC_ReceiveConfigsAllTameable));
+            }
+        }
+
+        private static void SelfRegisterListRPC(ZRpc rpc, ZNetPeer peer)
+        {
+            DBG.blogDebug("Self Registering");
+            rpc.Register<ZPackage>("RPC_ReceiveConfigsAllTameable", (RPC.RPC_ReceiveConfigsAllTameable));
+        }
+
+
+
+        private static void RPC_ReceiveConfigsAllTameable(ZRpc rpc, ZPackage pkg)
+        {
+            DBG.blogDebug("RPC_received");
+            if (!Plugin.ReceivedServerConfig)
+            {
+                if (!ZNet.instance.IsServer())
+                {
+                    if (pkg != null && pkg.Size() > 0)
+                    { // Confirm our Server is sending the RPC
+                      //string announcement = pkg.ReadString();
+                        CfgPackage.Unpack(pkg);
+                        PetManager.UpdatesFromServer();
+                        Plugin.ReceivedServerConfig = true;
+                    }
+                }
+                else
+                {
+                    DBG.blogDebug("Is Server, not needed");
+                }
+            }
+            else
+            {
+                DBG.blogDebug("Already Loaded");
+            }
+        }
+        public static void RPC_RequestConfigsAllTameable(ZRpc rpc)
         {
             DBG.blogDebug("RPC_requested");
             if (rpc != null)
             {
-                ZPackage zPackage = new CfgPackage().Pack();
-                rpc.Invoke("RPC_ReceiveConfigsAllTameable", zPackage);
+                if (tamelistPkg == null)
+                {
+                    DBG.blogDebug("Packing Tamelist Pkg");
+                    tamelistPkg = new CfgPackage().Pack();
+                }
+                //ZPackage zPackage = new CfgPackage().Pack();
+                rpc.Invoke("RPC_ReceiveConfigsAllTameable", tamelistPkg);
             }
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(Procreation), "Awake")]
+
+        private static void PostfixProcreationAwake(Procreation __instance)
+        {
+            if (__instance.m_nview.IsValid())
+            {
+                __instance.m_nview.Register<ZDOID, string>("SetOffspring", SetOffspring);
+            }
+        }
+
+
+        public static void SetOffspring(long sender, ZDOID characterID, string name)
+        {
+            ZNetView m_nview = ZNetScene.instance.GetComponent<ZNetView>();
+            if (m_nview.IsValid() && m_nview.IsOwner())
+            {
+                m_nview.GetZDO().Set("OffspringName", name);
+            }
+        }
+
+        public static string GetOffspring(Procreation _proc)
+        {
+            string tempstr = "";
+            ZNetView m_nview = _proc.m_nview;
+            //DBG.blogDebug("tried to get ZNetView");
+            if (m_nview.IsValid())
+            {
+                //DBG.blogDebug("ZNetView valid");
+                tempstr = m_nview.GetZDO().GetString("OffspringName");
+                //DBG.blogDebug("tempstr=" + tempstr);
+            }
+            return tempstr;
         }
 
         //****************************End New Code**************************

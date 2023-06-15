@@ -30,7 +30,7 @@ namespace AllTameable
                         //bool crowded = false;
                         if (__instance.m_tamed)
                         {
-                            if (Plugin.debugout.Value)
+                            if (ShowDebug(plr))
                             {
                                 taming_text += ("Prefab is: " + __instance.name +", is commandable= "+ _tm.m_commandable +"\n").Replace("(Clone)","");
                             }
@@ -58,7 +58,7 @@ namespace AllTameable
                                     }
                                     else
                                     {
-                                        if (Plugin.debugout.Value)
+                                        if (ShowDebug(plr))
                                         {
                                             taming_text += GetPregStats(_Proc);
                                             __result = __result + taming_text;
@@ -66,7 +66,7 @@ namespace AllTameable
                                         }
                                         else
                                         {
-                                            int instnum = getInstNum(_Proc);
+                                            int instnum = getInstNum(_Proc)[0];
                                             if (instnum != 0 )
                                             {
                                                 if (instnum == 1)
@@ -76,7 +76,6 @@ namespace AllTameable
                                                 else
                                                 {
                                                     taming_text += "Needs Mate\n";
-                                                    
                                                 }
 
                                             }
@@ -170,7 +169,7 @@ namespace AllTameable
                     }
                     else // not tameable
                     {
-                        if (Plugin.debugout.Value)
+                        if (ShowDebug(plr))
                         {
                             string taming_text = "\n";
                             taming_text += "Not tameable \n";
@@ -183,10 +182,22 @@ namespace AllTameable
                 }
             }
         }
-        public static int getInstNum(Procreation _proc)
+
+        public static bool ShowDebug(Player plr)
         {
+            if (Plugin.debugout.Value && !plr.IsCrouching())
+            {
+                return true;
+            }
+            return false;
+
+        }
+        public static int[] getInstNum(Procreation _proc)
+        {
+            int[] return_arr = { 0, 0, 0, 0 };
             int nrOfInstances = -10;
             int nrOfInstances2 = -10;
+            int valid_partners = 0;
             bool n_instcheck = true;
             try
             {
@@ -202,7 +213,8 @@ namespace AllTameable
                 nrOfInstances2 = SpawnSystem.GetNrOfInstances(_proc.m_offspringPrefab, _proc.gameObject.transform.position, _proc.m_totalCheckRange);
                 //DBG.blogDebug("n1=" + nrOfInstances + ", n2= " + nrOfInstances2);
                 //DBG.blogDebug("_proc.m_maxCreatures=" + _proc.m_maxCreatures);
-                n_instcheck = nrOfInstances + nrOfInstances2 < _proc.m_maxCreatures && SpawnSystem.GetNrOfInstances(_proc.m_myPrefab, _proc.transform.position, _proc.m_partnerCheckRange, eventCreaturesOnly: false, procreationOnly: true) >= 2;
+                valid_partners = SpawnSystem.GetNrOfInstances(_proc.m_myPrefab, _proc.transform.position, _proc.m_partnerCheckRange, eventCreaturesOnly: false, procreationOnly: true);
+                n_instcheck = nrOfInstances + nrOfInstances2 < _proc.m_maxCreatures && valid_partners >= 2;
             }
             catch (Exception e)
             {
@@ -213,30 +225,40 @@ namespace AllTameable
                     nrOfInstances2 = Plugin.Safe_GetNrOfInstances(_proc.m_offspringPrefab, _proc.gameObject.transform.position, _proc.m_totalCheckRange,true);
                     //DBG.blogDebug("n1=" + nrOfInstances + ", n2= " + nrOfInstances2);
                     //DBG.blogDebug("_proc.m_maxCreatures=" + _proc.m_maxCreatures);
-                    n_instcheck = nrOfInstances + nrOfInstances2 < _proc.m_maxCreatures && Plugin.Safe_GetNrOfInstances(_proc.m_myPrefab, _proc.transform.position, _proc.m_partnerCheckRange,true, eventCreaturesOnly: false, procreationOnly: true) >= 2;
+                    valid_partners = Plugin.Safe_GetNrOfInstances(_proc.m_myPrefab, _proc.transform.position, _proc.m_partnerCheckRange, true, eventCreaturesOnly: false, procreationOnly: true);
+                    n_instcheck = nrOfInstances + nrOfInstances2 < _proc.m_maxCreatures && valid_partners >= 2;
                 }
                 catch
                 {
                     DBG.blogDebug("Error: " + e.Message);
                     DBG.blogDebug("Error: " + e.StackTrace);
-                    return -1; //error
+                    return_arr[0] = -1;
+
+                    return return_arr; //error
                 }
                 
             }
+            return_arr[1] = nrOfInstances;
+            return_arr[2] = nrOfInstances2;
+            return_arr[3] = valid_partners;
             if (n_instcheck == true)
             {
                 //DBG.blogDebug("Less than max mates=" + nrOfInstances + ", offspring=" + nrOfInstances2 + ", max=" + _proc.m_maxCreatures);
-                return 0; //true
+                return_arr[0] = 0;
+                
+                return return_arr; //true
             }
             else if (nrOfInstances + nrOfInstances2 > _proc.m_maxCreatures-1)
             {
                 //DBG.blogDebug("Too many mates="+ nrOfInstances+", offspring="+ nrOfInstances2 +", max="+ _proc.m_maxCreatures);
-                return 1;//Too crowded
+                return_arr[0] = 1;
+                return return_arr;//Too crowded
             }
             else
             {
-                DBG.blogDebug("Not enough mates=" + nrOfInstances + ", offspring=" + nrOfInstances2 + ", max=" + _proc.m_maxCreatures);
-                return 2; //Needs Mate
+                //DBG.blogDebug("Not enough mates=" + nrOfInstances + ", offspring=" + nrOfInstances2 + ", max=" + _proc.m_maxCreatures);
+                return_arr[0] = 2;
+                return return_arr; //Needs Mate
             }
                     
             
@@ -258,7 +280,8 @@ namespace AllTameable
             bool ispregchance = UnityEngine.Random.value <= _proc.m_pregnancyChance || _proc.m_baseAI.IsAlerted() || _proc.m_tameable.IsHungry();
             ret_string += "\nislessThanPregchance: " + !ispregchance + "<-if not steady False, then valid";
 
-            int instcheck = getInstNum(_proc);
+            int[] inst_arr = getInstNum(_proc);
+            int instcheck = inst_arr[0];
             if (instcheck==0)
             {
                 ret_string += "\nLess than max instance: True";
@@ -266,10 +289,12 @@ namespace AllTameable
             else if (instcheck==1)
             {
                 ret_string += "\nLess than max instance: False";
+                ret_string += "\nMax=" + _proc.m_maxCreatures + ", Mates=" + (inst_arr[1]-1) + ", Offspring=" + inst_arr[2];
             }
             else if (instcheck == 2)
             {
                 ret_string += "\nLess than max instance: False (needs mate)";
+                ret_string += "\nReady Mates=" + (inst_arr[3] - 1) + ", Offspring=" + inst_arr[2];
                 ret_string += "\nClosest 3 Creatures within range of "+ _proc.m_totalCheckRange + " units are:\n";
                 ret_string += GetCloseInstances(_proc.gameObject, _proc.gameObject.transform.position, _proc.m_totalCheckRange);
             }
@@ -289,7 +314,6 @@ namespace AllTameable
         private static string GetCloseInstances(GameObject instance, Vector3 center, float maxRange)
         {
             //DBG.blogDebug("In GetCloseInstances");
-            Character partner = null;
             float num = 999999f;
             float num2 = 999999f;
             float num3 = 999999f;

@@ -10,16 +10,19 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using Jotunn.Entities;
+using System.Collections;
+using Jotunn.Managers;
 
 
 namespace AllTameable
 {
-    [BepInPlugin("meldurson.valheim.AllTameable", "AllTameable-Overhaul", "1.1.4")]
+    [BepInPlugin("meldurson.valheim.AllTameable", "AllTameable-Overhaul", "1.1.5")]
 
     [BepInDependency("com.jotunn.jotunn", BepInDependency.DependencyFlags.HardDependency)]
     [BepInDependency("org.bepinex.plugins.creaturelevelcontrol", BepInDependency.DependencyFlags.SoftDependency)]
 
-    internal class Plugin : BaseUnityPlugin
+    public class Plugin : BaseUnityPlugin
     {
         [Serializable]
         public class TameTable : ICloneable //All the info that can be changed for a creature
@@ -45,6 +48,7 @@ namespace AllTameable
             public string specificOffspringString { get; set; } = "";
             public List<specificMates> ListofRandomOffspring { get; set; } = new List<specificMates>();
             public float size { get; set; } = 1f;
+            public bool offspringOnly { get; set; } = false;
             public object Clone()
             {
                 return MemberwiseClone();
@@ -144,6 +148,7 @@ namespace AllTameable
         //{
         private static void Postfix(ItemDrop item, Tameable __instance) //Heals amount set in config
         {
+            //DBG.blogDebug("in consume");
             if (HealOnConsume.Value)
             {
                 Character character = __instance.m_character;
@@ -160,6 +165,19 @@ namespace AllTameable
                 //DBG.blogDebug("hp=" + hp);
                 character.Heal(hp, true);
 
+            }
+            if (!__instance.m_character.IsTamed())
+            {
+                string prefname = __instance.name.Replace("(Clone)", ""); ;
+                //DBG.blogDebug("prefname=" + prefname);
+                //get offspring
+                if (cfgList.TryGetValue(prefname, out TameTable cfgfile))
+                {
+                    __instance.m_fedDuration = cfgfile.fedDuration;
+                    //DBG.blogDebug("new fed duration is " + cfgfile.fedDuration);
+                }
+
+                    
             }
 
         }
@@ -223,8 +241,8 @@ namespace AllTameable
         private static void Postfix()
         {
             DBG.blogInfo("Clearing TameLists");
-            prefabManager.Clear();
-            cfgList.Clear();
+            //prefabManager.Clear();
+            //cfgList.Clear();
             cfgListFailed.Clear();
             cfgPostList.Clear();
             CompatMatesList.Clear();
@@ -234,9 +252,11 @@ namespace AllTameable
             PostMakeList.Clear();
             PostLoadServerConfig = false;
             PreSetMinis = true;
+            ReceivedServerConfig = false;
 
 
         }
+
         //}
         [HarmonyPostfix]
         [HarmonyPatch(typeof(Tameable), "Tame")]
@@ -245,13 +265,18 @@ namespace AllTameable
         private static void Postfix(Tameable __instance) //changes the faction based on config
         {
             string key = __instance.name.Replace("(Clone)", "");
-            if (cfgList.ContainsKey(key) && cfgList[key].changeFaction)
+            if (cfgList.ContainsKey(key) )
             {
-                Humanoid humanoid = __instance.GetComponent<Humanoid>();
-                humanoid.m_faction = Character.Faction.Players;
-                humanoid.m_group = "";
-                //DBG.blogDebug("Changed Faction");
-                //DBG.blogDebug(cfgList[key].changeFaction);
+                //DBG.blogDebug("Found Key");
+                __instance.m_fedDuration = __instance.m_fedDuration * TamedFedMultiplier.Value;
+                if (cfgList[key].changeFaction)
+                {
+                    Humanoid humanoid = __instance.GetComponent<Humanoid>();
+                    humanoid.m_faction = Character.Faction.Players;
+                    humanoid.m_group = "";
+                    //DBG.blogDebug("Changed Faction");
+                    //DBG.blogDebug(cfgList[key].changeFaction);
+                }
             }
         }
         //}
@@ -304,6 +329,30 @@ namespace AllTameable
             {
                 SetPlayerSpwanEffect();
             }
+            /*
+            if (!ReceivedServerConfig & !ZNet.instance.IsServer())
+            {
+                DBG.blogWarning("Has not received Server config, trying again");
+                ZNetPeer peer = ZNet.instance.GetServerPeer();
+                try
+                {
+                    DBG.blogDebug("Request registered");
+                    peer.m_rpc.Register("RPC_RequestConfigsAllTameable", RPC.RPC.RPC_RequestConfigsAllTameable);
+                    
+                }
+                catch
+                {
+                    DBG.blogDebug("Server already has RPC registered");
+                }
+                if (!ReceivedServerConfig)
+                {
+                    DBG.blogDebug("Requested Server Config OnSpawn");
+                    peer.m_rpc.Invoke("RPC_RequestConfigsAllTameable");
+
+                }
+                
+            }
+            */
         }
         //}
 
@@ -844,7 +893,9 @@ namespace AllTameable
             }
             return num2;
         }
-        
+
+
+
         [HarmonyPrefix]
         [HarmonyPatch(typeof(Procreation), "Procreate")]
 
@@ -857,7 +908,6 @@ namespace AllTameable
             }
             else
             {
-
             }
         }
 
@@ -869,103 +919,143 @@ namespace AllTameable
             string prefname = __instance.name.Replace("(Clone)", ""); ;
             //DBG.blogDebug("prefname=" + prefname);
             //get offspring
-            if (cfgList.TryGetValue(prefname, out TameTable cfgfile))
+            DBG.blogDebug("Make Pregnant");
+            //__instance.m_nview.GetZDO().Set("OffspringName", __instance.m_offspring.name);
+            initRandomOffspring(prefname, __instance,true);
+        }
+
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(Procreation), "ResetPregnancy")]
+
+        private static void PostfixResetPregnancy(Procreation __instance) //makes sure that offspring is still valid
+        {
+            string prefname = __instance.name.Replace("(Clone)", ""); ;
+            //DBG.blogDebug("prefname=" + prefname);
+            //get offspring
+            string offspringName = RPC.RPC.GetOffspring(__instance);
+            if((offspringName+ "") != "")
             {
-                DBG.blogDebug("found prefab, " +prefname);
-                if ((cfgfile.specificOffspringString + "") != "")
+                initRandomOffspring(prefname, __instance);
+                DBG.blogDebug("offspringName=" + offspringName);
+                ZNetScene zns = ZNetScene.instance;
+                GameObject prefab = zns.GetPrefab(offspringName);
+                if (prefab != null)
                 {
-                    //DBG.blogDebug("specificOffspringString=" + cfgfile.specificOffspringString);
-                    if (cfgfile.ListofRandomOffspring.Count() == 0)
-                    {
-                        initRandomOffspring(cfgfile, __instance);
-                    }
-                    changeOffspring(__instance, cfgfile.ListofRandomOffspring);
+                    DBG.blogDebug("prefab=" + prefab.name);
+                    __instance.m_offspring = prefab;
+                    __instance.m_offspringPrefab = prefab;
                 }
+                else
+                {
+                    DBG.blogDebug("Failed to get random offspring");
+                    initRandomOffspring(prefname, __instance,true); 
+                }
+            }
+            else
+            {
+                initRandomOffspring(prefname, __instance, true);
             }
         }
 
-        private static void initRandomOffspring(TameTable tmtbl, Procreation proc)
+        private static void initRandomOffspring(string prefabname, Procreation proc, bool changeOff = false)
         {
-            //List<string[]> partnerList = new List<string[]>();
-            DBG.blogDebug("initOffspring");
-            
-            List<specificMates> specMates = new List<specificMates>();
-            Dictionary<string, string> partnersDict = new Dictionary<string, string>();
-            string[] partners = tmtbl.specificOffspringString.Split(',');
-            //DBG.blogDebug(partners.ToString());
-            partners = partners.Skip(1).ToArray();
-            //DBG.blogDebug(partners.ToString());
-            foreach (string combinedValue in partners)
+            if (cfgList.TryGetValue(prefabname, out TameTable tmtbl))
             {
-                string[] splitValue = combinedValue.Replace(")", "").Split('(');
-                partnersDict.Add(splitValue[0], splitValue[1]);
-                //DBG.blogDebug("key=" + splitValue[0] + ", value=" + splitValue[1]);
-                specificMates addPartner = new specificMates();
-                addPartner.prefabName = splitValue[0];
-                string[] prefchances = splitValue[1].Split('/');
-                float totalchance = 0;
-                foreach (string chancepkg in prefchances)
+                DBG.blogDebug("found prefab, " + prefabname);
+                if ((tmtbl.specificOffspringString + "") != "")
                 {
-                    chanceOffspring chanceoff = new chanceOffspring();
-                    string[] pref_and_chance = chancepkg.Split(':');
-                    string prefname = pref_and_chance[0];
-                    GameObject mate_go = ZNetScene.instance.GetPrefab(prefname);
-                    if (mate_go != null)
+                    //DBG.blogDebug("specificOffspringString=" + cfgfile.specificOffspringString);
+                    if (tmtbl.ListofRandomOffspring.Count() == 0)
                     {
-                        DBG.blogDebug("found go for " + mate_go.name);
-                        //Procreation mate_proc = mate_go.GetComponent<Procreation>();
-                        if (mate_go.GetComponent<Procreation>() != null)
-                        {
-                            chanceoff.offspring = mate_go.GetComponent<Procreation>().m_offspring;
-                            DBG.blogDebug("chanceoff.offspring=" + chanceoff.offspring.name);
-                        }
-                        else
-                        {
-                            Growup this_growup = proc.m_offspring.GetComponent<Growup>();
-                            if(this_growup != null)
-                            {
-                                chanceoff.offspring = PetManager.SpawnMini(mate_go, this_growup.m_growTime);
-                            }
-                            else
-                            {
-                                DBG.blogDebug("growup null");
-                                chanceoff.offspring = PetManager.SpawnMini(mate_go);
-                            }
-                            
-                            DBG.blogDebug("chanceoff.offspring=" + chanceoff.offspring.name);
-                        }
-                        try { chanceoff.chance = float.Parse(pref_and_chance[1]); }
-                        catch { DBG.blogWarning("Not a valid float for chance for "+proc.name); }
-                        //DBG.blogDebug("chanceoff.chance=" + chanceoff.chance);
-                        totalchance += chanceoff.chance;
-                        addPartner.possibleOffspring.Add(chanceoff);
-                    }
-                    else
-                    {
-                        DBG.blogWarning("could not find prefab:" + prefname + " when trying to mate with " + proc.name);
-                    }
-                    
-                }
-                DBG.blogDebug("totalchance=" + totalchance);
-                if (totalchance < 100)
-                {
-                    chanceOffspring defaultOff = new chanceOffspring();
-                    defaultOff.chance = 100 - totalchance;
-                    defaultOff.offspring = proc.m_offspring;
-                    addPartner.possibleOffspring.Add(defaultOff);
-                }
-                specMates.Add(addPartner);
+                        //List<string[]> partnerList = new List<string[]>();
+                        DBG.blogDebug("initOffspring");
 
-            }
-            tmtbl.ListofRandomOffspring = specMates;
-            foreach (specificMates specmates in tmtbl.ListofRandomOffspring)
-            {
-                DBG.blogDebug("specmates.prefabName=" + specmates.prefabName);
-                foreach (chanceOffspring chancepkg in specmates.possibleOffspring)
-                {
-                    DBG.blogDebug("     chancepkg.offspring.name=" + chancepkg.offspring.name);
-                    DBG.blogDebug("     chancepkg.chance=" + chancepkg.chance);
+                        List<specificMates> specMates = new List<specificMates>();
+                        Dictionary<string, string> partnersDict = new Dictionary<string, string>();
+                        string[] partners = tmtbl.specificOffspringString.Split(',');
+                        //DBG.blogDebug(partners.ToString());
+                        partners = partners.Skip(1).ToArray();
+                        //DBG.blogDebug(partners.ToString());
+                        foreach (string combinedValue in partners)
+                        {
+                            string[] splitValue = combinedValue.Replace(")", "").Split('(');
+                            partnersDict.Add(splitValue[0], splitValue[1]);
+                            //DBG.blogDebug("key=" + splitValue[0] + ", value=" + splitValue[1]);
+                            specificMates addPartner = new specificMates();
+                            addPartner.prefabName = splitValue[0];
+                            string[] prefchances = splitValue[1].Split('/');
+                            float totalchance = 0;
+                            foreach (string chancepkg in prefchances)
+                            {
+                                chanceOffspring chanceoff = new chanceOffspring();
+                                string[] pref_and_chance = chancepkg.Split(':');
+                                string prefname = pref_and_chance[0];
+                                GameObject mate_go = ZNetScene.instance.GetPrefab(prefname);
+                                if (mate_go != null)
+                                {
+                                    DBG.blogDebug("found go for " + mate_go.name);
+                                    //Procreation mate_proc = mate_go.GetComponent<Procreation>();
+                                    if (mate_go.GetComponent<Procreation>() != null)
+                                    {
+                                        chanceoff.offspring = mate_go.GetComponent<Procreation>().m_offspring;
+                                        DBG.blogDebug("chanceoff.offspring=" + chanceoff.offspring.name);
+                                    }
+                                    else
+                                    {
+                                        Growup this_growup = proc.m_offspring.GetComponent<Growup>();
+                                        if (this_growup != null)
+                                        {
+                                            chanceoff.offspring = PetManager.SpawnMini(mate_go, this_growup.m_growTime);
+                                        }
+                                        else
+                                        {
+                                            DBG.blogDebug("growup null");
+                                            chanceoff.offspring = PetManager.SpawnMini(mate_go);
+                                        }
+
+                                        DBG.blogDebug("chanceoff.offspring=" + chanceoff.offspring.name);
+                                    }
+                                    try { chanceoff.chance = float.Parse(pref_and_chance[1]); }
+                                    catch { DBG.blogWarning("Not a valid float for chance for " + proc.name); }
+                                    //DBG.blogDebug("chanceoff.chance=" + chanceoff.chance);
+                                    totalchance += chanceoff.chance;
+                                    addPartner.possibleOffspring.Add(chanceoff);
+                                }
+                                else
+                                {
+                                    DBG.blogWarning("could not find prefab:" + prefname + " when trying to mate with " + proc.name);
+                                }
+
+                            }
+                            DBG.blogDebug("totalchance=" + totalchance);
+                            if (totalchance < 100)
+                            {
+                                chanceOffspring defaultOff = new chanceOffspring();
+                                defaultOff.chance = 100 - totalchance;
+                                defaultOff.offspring = proc.m_offspring;
+                                addPartner.possibleOffspring.Add(defaultOff);
+                            }
+                            specMates.Add(addPartner);
+
+                        }
+                        tmtbl.ListofRandomOffspring = specMates;
+                        foreach (specificMates specmates in tmtbl.ListofRandomOffspring)
+                        {
+                            DBG.blogDebug("specmates.prefabName=" + specmates.prefabName);
+                            foreach (chanceOffspring chancepkg in specmates.possibleOffspring)
+                            {
+                                DBG.blogDebug("     chancepkg.offspring.name=" + chancepkg.offspring.name);
+                                DBG.blogDebug("     chancepkg.chance=" + chancepkg.chance);
+                            }
+                        }
+                    }
+                    if (changeOff)
+                    {
+                        changeOffspring(proc, tmtbl.ListofRandomOffspring);
+                    }
                 }
+                
             }
         }
         private static void changeOffspring(Procreation proc, List<specificMates> mates)
@@ -1013,6 +1103,8 @@ namespace AllTameable
                         proc.m_offspring = chanceOff.offspring;
                         proc.m_offspringPrefab = chanceOff.offspring;
                         DBG.blogDebug("proc.m_offspring=" + proc.m_offspring.name);
+
+                        proc.m_nview.GetZDO().Set("OffspringName", proc.m_offspring.name);
                         break;
                     }
                 }
@@ -1286,6 +1378,7 @@ namespace AllTameable
         public static List<string> PostMakeList = new List<string>();
 
         public static TameTable CfgTable;
+        public static bool ReceivedServerConfig = false;
         public static bool PostLoadServerConfig = false;
 
         public static List<string> ThxList = new List<string> { "deftesthawk", "buzz", "lordbugx", "hawksword" };
@@ -1315,6 +1408,13 @@ namespace AllTameable
         public static bool UseCLLC = false;
 
 
+
+        public static CustomRPC jot_TamelistRPC;
+
+
+        public static readonly WaitForSeconds OneSecondWait = new WaitForSeconds(1f);
+
+        public static readonly WaitForSeconds HalfSecondWait = new WaitForSeconds(0.5f);
 
 
         private void Awake()
@@ -1411,8 +1511,140 @@ namespace AllTameable
             {
                 TameUpdate = true;
             };
+
+            jot_TamelistRPC = NetworkManager.Instance.AddRPC("jot_tamelistRPC", null, jot_RPCClientReceive);
+            SynchronizationManager.Instance.AddInitialSynchronization(jot_TamelistRPC, SendInitialConfig);
         }
-        public static bool CheckHuman(GameObject go)
+
+        public int requestcount = 0;
+
+        private ZPackage SendInitialConfig()
+        {
+            DBG.blogDebug("Client received RPC");
+            RPC.CfgPackage cfgPackage = new RPC.CfgPackage();
+            return cfgPackage.PackTamelist();
+        }
+
+
+
+        private IEnumerator jot_RPCClientReceive(long sender, ZPackage package)
+        {
+            DBG.blogDebug("Client received RPC");
+            Jotunn.Logger.LogMessage($"Received blob, processing!");
+            yield return null;
+            RPC.CfgPackage.Unpack(package);
+            PetManager.UpdatesFromServer();
+
+        }
+
+
+
+
+
+
+
+
+
+
+
+            /*
+            private IEnumerator jot_RPCServerReceive(long sender, ZPackage package)
+            {
+                DBG.blogDebug("Received Tamelist RPC Server");
+
+                if (RPC.RPC.tamelistPkg == null)
+                {
+                    DBG.blogDebug("Packing Tamelist Pkg");
+                    RPC.RPC.tamelistPkg = new RPC.CfgPackage.Pack();
+                }
+                if(RPC.RPC.tamelistPkg == null)
+                {
+                    DBG.blogDebug("RPC Still Null");
+                }
+                yield return null;
+
+                DBG.blogDebug("Sending now");
+                jot_TamelistRPC.SendPackage(ZNet.instance.m_peers, new ZPackage(RPC.RPC.tamelistPkg.GetArray()));
+                DBG.blogDebug("Sent");
+            }
+
+                        //yield return HalfSecondWait;
+
+                string dot = string.Empty;
+                for (int i = 0; i < 5; ++i)
+                {
+                    dot += ".";
+                    Jotunn.Logger.LogMessage(dot);
+                    DBG.blogDebug("Processing=" + jot_TamelistRPC.IsProcessing);
+                    DBG.blogDebug("Processing Other=" + jot_TamelistRPC.IsProcessingOther);
+                    DBG.blogDebug("Receiving=" + jot_TamelistRPC.IsReceiving);
+                    DBG.blogDebug("IsSending=" + jot_TamelistRPC.IsSending);
+                    yield return HalfSecondWait;
+                }
+
+
+
+
+            // React to the RPC call on a client
+            private IEnumerator jot_RPCClientReceive(long sender, ZPackage package)
+            {
+                DBG.blogDebug("Received Tamelist RPC Client");
+                if (jot_TamelistRPC.IsProcessingOther)
+                {
+                    yield break;
+                }
+                yield return null;
+
+
+                if (package == null)
+                {
+                    DBG.blogDebug("Client RPC Still Null");
+                }
+                if (package.GetArray().Length<1)
+                {
+                    DBG.blogDebug("Client RPC too short");
+                }
+                DBG.blogDebug("Jotunn Unpack Tamelist RPC");
+                //byte[] array = package.ReadByteArray();
+                //DBG.blogDebug("made byte array");
+                //DBG.blogDebug("Size="+ package.Size());
+                //DBG.blogDebug("String=" + package.ToString());
+                try
+                {
+                    RPC.CfgPackage.Unpack(package);
+                    PetManager.UpdatesFromServer();
+                }
+                catch
+                {
+                    DBG.blogDebug("Failed Unpack");
+                }
+
+            }
+            */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            public static bool CheckHuman(GameObject go)
         {
             try
             {
