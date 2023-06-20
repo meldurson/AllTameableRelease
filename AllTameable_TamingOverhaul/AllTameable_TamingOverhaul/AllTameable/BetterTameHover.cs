@@ -204,7 +204,7 @@ namespace AllTameable
                 if (!(_proc.m_myPrefab ?? false) | !(_proc.m_offspringPrefab ?? false)) //prefab is null
                 {
                     DBG.blogDebug("Hover Initialised");
-                    Plugin.InitProcPrefabs(_proc);
+                    Genetics.Genetics.InitProcPrefabs(_proc);
                     
                 }
 

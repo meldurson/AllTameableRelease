@@ -17,7 +17,7 @@ namespace AllTameable.RPC
     {
         public static ZPackage tamelistPkg = null;
         /*
-        [HarmonyPatch(typeof(Game), "Start")]
+        [HarmonyPatch(typeof(Game), "Start")]3
         public static class GameStartPatch
         {
             private static void Prefix()
@@ -269,40 +269,7 @@ namespace AllTameable.RPC
             }
         }
 
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(Procreation), "Awake")]
-
-        private static void PostfixProcreationAwake(Procreation __instance)
-        {
-            if (__instance.m_nview.IsValid())
-            {
-                __instance.m_nview.Register<ZDOID, string>("SetOffspring", SetOffspring);
-            }
-        }
-
-
-        public static void SetOffspring(long sender, ZDOID characterID, string name)
-        {
-            ZNetView m_nview = ZNetScene.instance.GetComponent<ZNetView>();
-            if (m_nview.IsValid() && m_nview.IsOwner())
-            {
-                m_nview.GetZDO().Set("OffspringName", name);
-            }
-        }
-
-        public static string GetOffspring(Procreation _proc)
-        {
-            string tempstr = "";
-            ZNetView m_nview = _proc.m_nview;
-            //DBG.blogDebug("tried to get ZNetView");
-            if (m_nview.IsValid())
-            {
-                //DBG.blogDebug("ZNetView valid");
-                tempstr = m_nview.GetZDO().GetString("OffspringName");
-                //DBG.blogDebug("tempstr=" + tempstr);
-            }
-            return tempstr;
-        }
+       
 
         //****************************End New Code**************************
         /*

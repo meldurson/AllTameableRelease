@@ -183,34 +183,7 @@ namespace AllTameable
         }
         //}
 
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(Tameable), "Interact")]
-        private static void Postfix(Humanoid user, bool hold, bool alt, Tameable __instance) 
-        {
-            if (__instance == null || __instance.m_character == null)
-                return;
-            //Show some dialog when an Talking NPC follows the player.
-            NpcTalk talk = ((Component)__instance.m_character).GetComponent<NpcTalk>();
-            if (talk != null)
-            {
-                var monsterAI = __instance.GetComponentInParent<MonsterAI>();
-                if (monsterAI != null)
-                {
-                    if (!__instance.m_character.IsTamed())
-                    {
-                        talk.QueueSay(new List<string>() { "Hire me for a Black Core?", "I'd fight anything for a Black Core" }, "Greet", null);
-                    }
-                    else if (monsterAI.GetFollowTarget() != null)
-                    {
-                        talk.QueueSay(new List<string>() { "Where to boss?", "Lets do it!" }, "Greet", null);
-                    }
-                    else
-                    {
-                        talk.QueueSay(new List<string>() { "Waiting here.", "Guarding." }, "Talk", null);
-                    }
-                }
-            }
-        }
+       
 
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode) // Tries to initialise tames as late as possible before game loaded as to allow for mods to add their creatures
         {
@@ -231,6 +204,97 @@ namespace AllTameable
                     }
                 }
             }
+        }
+
+
+        public static int Safe_GetNrOfInstances(GameObject prefab, Vector3 center, float maxRange, bool isError, bool eventCreaturesOnly = false, bool procreationOnly = false)
+        {
+            if (isError)
+            {
+                DBG.blogWarning("****Failed Default Number of Instances****");
+                DBG.blogDebug("Prefab is null= " + !(prefab ?? false));
+                try { DBG.blogDebug("center: = " + center); } catch { }
+                try { DBG.blogDebug("maxRange: = " + maxRange); } catch { }
+                try { DBG.blogDebug("eventCreaturesOnly: = " + eventCreaturesOnly); } catch { }
+                try { DBG.blogDebug("procreationOnly: = " + procreationOnly); } catch { }
+                try { DBG.blogDebug("prefab.transform: = " + prefab.transform); } catch { }
+                try { DBG.blogDebug("prefab.name: = " + prefab.name); } catch { }
+                try { DBG.blogDebug("prefab.gameObject.name: = " + prefab.gameObject.name); } catch { }
+                try { DBG.blogDebug("prefab.ToString(): = " + prefab.ToString()); } catch { }
+                try { DBG.blogDebug("prefab.GetComponent<BaseAI>() != null: = " + prefab.GetComponent<BaseAI>() != null); } catch { }
+
+
+
+            }
+            string text = prefab.name + "(Clone)";
+            if (prefab.GetComponent<BaseAI>() != null)
+            {
+
+                List<BaseAI> allInstances = BaseAI.GetAllInstances();
+                int num = 0;
+                if (isError)
+                {
+                    try { DBG.blogWarning("allInstances:= " + allInstances.Count); } catch { }
+                }
+
+                foreach (BaseAI item in allInstances)
+                {
+                    if (isError)
+                    {
+                        try { DBG.blogDebug("item.gameObject.name:= " + item.gameObject.name); } catch { }
+                        try { DBG.blogDebug("Vector3.Distance(center, item.transform.position:= " + Vector3.Distance(center, item.transform.position)); } catch { }
+                        MonsterAI monsterAI = item as MonsterAI;
+                        Procreation component = item.GetComponent<Procreation>();
+                        try { DBG.blogDebug("MonsterAI:= " + monsterAI); } catch { }
+                        try { DBG.blogDebug("!monsterAI.IsEventCreature():= " + !monsterAI.IsEventCreature()); } catch { }
+                        try { DBG.blogDebug("component:= " + component); } catch { }
+                        try { DBG.blogDebug("!component.ReadyForProcreation():= " + !component.ReadyForProcreation()); } catch { }
+                    }
+                    if (item.gameObject.name != text || (maxRange > 0f && Vector3.Distance(center, item.transform.position) > maxRange))
+                    {
+                        continue;
+                    }
+                    if (eventCreaturesOnly)
+                    {
+                        MonsterAI monsterAI = item as MonsterAI;
+                        if ((bool)monsterAI && !monsterAI.IsEventCreature())
+                        {
+                            continue;
+                        }
+                    }
+                    if (procreationOnly)
+                    {
+                        Procreation component = item.GetComponent<Procreation>();
+                        if ((bool)component && !component.ReadyForProcreation())
+                        {
+                            continue;
+                        }
+                    }
+                    num++;
+                }
+                return num;
+
+            }
+            GameObject[] array = GameObject.FindGameObjectsWithTag("spawned");
+            if (isError)
+            {
+                try { DBG.blogWarning("array:= " + array); } catch { }
+            }
+            int num2 = 0;
+            GameObject[] array2 = array;
+            foreach (GameObject gameObject in array2)
+            {
+                if (isError)
+                {
+                    try { DBG.blogDebug("gameObject.name:= " + gameObject.name); } catch { }
+                    try { DBG.blogDebug("Vector3.Distance(center, gameObject.transform.position:= " + Vector3.Distance(center, gameObject.transform.position)); } catch { }
+                }
+                if (gameObject.name.StartsWith(text) && (!(maxRange > 0f) || !(Vector3.Distance(center, gameObject.transform.position) > maxRange)))
+                {
+                    num2++;
+                }
+            }
+            return num2;
         }
 
 
@@ -329,1012 +393,13 @@ namespace AllTameable
             {
                 SetPlayerSpwanEffect();
             }
-            /*
-            if (!ReceivedServerConfig & !ZNet.instance.IsServer())
-            {
-                DBG.blogWarning("Has not received Server config, trying again");
-                ZNetPeer peer = ZNet.instance.GetServerPeer();
-                try
-                {
-                    DBG.blogDebug("Request registered");
-                    peer.m_rpc.Register("RPC_RequestConfigsAllTameable", RPC.RPC.RPC_RequestConfigsAllTameable);
-                    
-                }
-                catch
-                {
-                    DBG.blogDebug("Server already has RPC registered");
-                }
-                if (!ReceivedServerConfig)
-                {
-                    DBG.blogDebug("Requested Server Config OnSpawn");
-                    peer.m_rpc.Invoke("RPC_RequestConfigsAllTameable");
-
-                }
-                
-            }
-            */
+          
         }
-        //}
+       
 
-        //Patch TameableUseItem to go to AllTame_Interactable if not implimented
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(Tameable), "UseItem")]
-        //private static class Prefix_Player_SetLocalPlayer
-        //{
-        private static void Postfix_Tameable_UseItem(Tameable __instance, Humanoid user, ItemDrop.ItemData item, ref bool __result)
-        {
-            if (!__result)
-            {
-                Interactable alltame_interact = __instance.gameObject.GetComponentInParent<AllTameable.AllTame_Interactable>();
-                if (alltame_interact != null && alltame_interact.UseItem(user, item))
-                {
-                    //DBG.blogDebug("GotType");
-                    __result = true;
-                    return;
-                }
-            }
-        }
 
 
-            //*************Testing Recruiting*****************
-            /*
-            [HarmonyPrefix]
-            [HarmonyPatch(typeof(Tameable), "Interact")]
-            //private static class Prefix_Player_SetLocalPlayer
-            //{
-            private static void Prefix(Tameable __instance, Humanoid user, bool hold, bool alt)
-            {
-                DBG.blogDebug("in Interact prefix");
-                DBG.blogDebug("__instance=" + __instance);
-                DBG.blogDebug("alt=" + alt);
-            }
-            */
-
-
-
-
-            //*****Moved to AllTame_Interactable.cs*****
-
-            /*
-            [HarmonyPrefix]
-            [HarmonyPatch(typeof(Humanoid), "UseItem")]
-            //private static class Prefix_Player_SetLocalPlayer
-            //{
-            private static void Prefix(Humanoid __instance, Inventory inventory, ItemDrop.ItemData item, bool fromInventoryGui)
-            {
-                try
-                {
-                    int costtoRecruit = 5;
-                    //DBG.blogDebug("in UseItem prefix");
-                    //DBG.blogDebug("__instance=" + __instance);
-                    GameObject hoverObject = __instance.GetHoverObject(); //get go that looking at
-                    Humanoid hoverCreature = hoverObject.GetComponent<Humanoid>(); //get the humanoid
-                    Inventory inv2 = __instance.GetInventory(); //get players inventory
-                    DBG.blogDebug("item.m_dropPrefab.name=" + item.m_dropPrefab.name); //item using
-                    if (item.m_dropPrefab.name == "BlackCore")
-                    {
-                        int numininventory = inv2.CountItems(item.m_shared.m_name); // checks how many cores player has
-                        DBG.blogDebug("Number of " + item.m_dropPrefab.name + " is " + numininventory);
-                        if (numininventory >= costtoRecruit)
-                        {
-                            DBG.blogDebug("Attempting Trade");
-                            if (!hoverCreature.IsTamed())
-                            {
-                                Tameable tame = new Tameable();
-                                tame = hoverCreature.gameObject.GetComponent<Tameable>();
-
-                                if (tame != null)
-                                {
-                                    tame.Tame();
-                                    bool itemremoved = inv2.RemoveItem(item, costtoRecruit);
-                                    DBG.blogDebug("Recruited Dverger");
-                                }
-                                else
-                                {
-                                    DBG.blogDebug("No tameable");
-                                }
-                            }
-                        }
-                        else
-                        {
-                            DBG.blogDebug("Not enough Black cores, need " + costtoRecruit);
-                        }
-                    }
-                }catch(Exception ex)
-                {
-
-                }
-            }
-
-            */
-
-            /*
-            [HarmonyPrefix]
-            [HarmonyPatch(typeof(Character), "ApplyDamage")]
-            //private static class Character_RPC_Heal_Patch
-            //{
-            private static bool Prefix(ref Character __instance, ref HitData hit)
-            {
-                DBG.blogDebug("In All Tameable ApplyDamage Prefix");
-                try
-                {
-                    DBG.blogDebug("__instance.name= " + __instance.name);
-                }
-                catch
-                {
-                    DBG.blogDebug("__instance.name= failed");
-                }
-                try
-                {
-                    DBG.blogDebug("__instance= " + __instance);
-                }
-                catch
-                {
-                    DBG.blogDebug("__instance= failed");
-                }
-
-                try
-                {
-                    DBG.blogDebug("hit is null= " +  hit == null);
-                }
-                catch
-                {
-                    DBG.blogDebug("hit is null= failed");
-                }
-                try
-                {
-                    DBG.blogDebug("hit.m_attacker= " + hit.m_attacker);
-                }
-                catch
-                {
-                    DBG.blogDebug("hit.m_attacker= failed");
-                }
-                try
-                {
-                    DBG.blogDebug("hit.m_damage= " + hit.m_damage);
-                }
-                catch
-                {
-                    DBG.blogDebug("hit.m_damage= failed");
-                }
-                try
-                {
-                    DBG.blogDebug("hit.GetAttacker()= " + hit.GetAttacker().name);
-                }
-                catch
-                {
-                    DBG.blogDebug("hit.GetAttacker().name= failed");
-                }
-                DBG.blogDebug("Getting data of HitData");
-                foreach (FieldInfo prop in typeof(HitData).GetFields())
-                {
-                    try
-                    {
-                            DBG.blogDebug(prop.Name + " is " + prop.GetValue(hit));
-
-                    }
-                    catch
-                    {
-                        //DBG.blogDebug("AllTame_AnimalAI does not have " + prop.Name);
-                    }
-                }
-
-
-                if (__instance is null)
-                {
-                    DBG.blogDebug("__instance is Null skipping Error");
-                    return false;
-                }
-                DBG.blogDebug("__instance is not Null");
-                return true;
-
-            }
-
-
-
-            [HarmonyPrefix]
-            [HarmonyPatch(typeof(Character), "Damage")]
-            //private static class Character_RPC_Heal_Patch
-            //{
-            private static void Prefix2(ref Character __instance, ref HitData hit)
-            {
-                DBG.blogDebug("*******************In All Tameable Damage Prefix*************");
-                try
-                {
-                    DBG.blogDebug("__instance.name= " + __instance.name);
-                }
-                catch
-                {
-                    DBG.blogDebug("__instance.name= failed");
-                }
-                try
-                {
-                    DBG.blogDebug("__instance= " + __instance);
-                }
-                catch
-                {
-                    DBG.blogDebug("__instance= failed");
-                }
-                try
-                {
-                    DBG.blogDebug("hit is null= " + hit == null);
-                }
-                catch
-                {
-                    DBG.blogDebug("hit is null= failed");
-                }
-                try
-                {
-                    DBG.blogDebug("hit.m_attacker= " + hit.m_attacker);
-                }
-                catch
-                {
-                    DBG.blogDebug("hit.m_attacker= failed");
-                }
-                try
-                {
-                    DBG.blogDebug("hit.m_damage= " + hit.m_damage);
-                }
-                catch
-                {
-                    DBG.blogDebug("hit.m_damage= failed");
-                }
-                try
-                {
-                    DBG.blogDebug("hit.GetAttacker()= " + hit.GetAttacker().name);
-                }
-                catch
-                {
-                    DBG.blogDebug("hit.GetAttacker().name= failed");
-                }
-                DBG.blogDebug("Getting data of HitData");
-                foreach (FieldInfo prop in typeof(HitData).GetFields())
-                {
-                    try
-                    {
-                        DBG.blogDebug(prop.Name + " is " + prop.GetValue(hit));
-
-                    }
-                    catch
-                    {
-                        //DBG.blogDebug("AllTame_AnimalAI does not have " + prop.Name);
-                    }
-                }
-                DBG.blogDebug("trying get attacker");
-                Character attacker = hit.GetAttacker();
-                DBG.blogDebug("got attacker");
-                try
-                {
-                    DBG.blogDebug("************attacker.name=" + attacker.name);
-                }
-                catch
-                {
-                    DBG.blogDebug("****attacker.name=failed");
-                }
-                try
-                {
-                    DBG.blogDebug("************attacker.m_name=" + attacker.m_name);
-                }
-                catch
-                {
-                    DBG.blogDebug("*****attacker.m_name=failed");
-                }
-                try
-                {
-                    DBG.blogDebug("attacker ==null=" + attacker == null);
-                }
-                catch
-                {
-                    DBG.blogDebug("attacker ==null=failed");
-                }
-                foreach (FieldInfo prop2 in typeof(Character).GetFields())
-                {
-                    try
-                    {
-                        DBG.blogDebug(prop2.Name + " is " + prop2.GetValue(attacker));
-
-                    }
-                    catch
-                    {
-                        DBG.blogDebug("*** "+prop2.Name + " failed");
-                    }
-                }
-                try
-                {
-                    DBG.blogDebug("attacker.m_nview.IsValid()=" + attacker.m_nview.IsValid());
-                }
-                catch
-                {
-                    DBG.blogDebug("**attacker.m_nview.IsValid()=failed");
-                }
-
-                try
-                {
-                    DBG.blogDebug("attacker.GetZDOID()="+attacker.GetZDOID());
-                }
-                catch
-                {
-                    DBG.blogDebug("attacker.GetZDOID()=failed");
-                }
-                try
-                {
-                    DBG.blogDebug("__instance.GetComponent<Tameable>().name=" + __instance.GetComponent<Tameable>().name);
-                }
-                catch
-                {
-                    DBG.blogDebug("__instance.GetComponent<Tameable>().name=failed");
-                }
-                try
-                {
-                    if (attacker == __instance.GetComponent<Tameable>().GetPlayer(attacker.GetZDOID()))
-                    {
-                        DBG.blogDebug("attacker= true");
-                    }
-                    else
-                    {
-                        DBG.blogDebug("attacker= false");
-                    }
-                }
-                catch
-                {
-
-                }
-                ZDO zDO = __instance.m_nview.GetZDO();
-                Tameable component = __instance.GetComponent<Tameable>();
-                DBG.blogDebug("1");
-                if (__instance.IsTamed() && zDO != null && hit != null && !(component == null) && ShouldIgnoreDamage(__instance, hit, zDO))
-                {
-                    hit = new HitData();
-                }
-
-            }
-
-            private static bool ShouldIgnoreDamage(Character __instance, HitData hit, ZDO zdo)
-            {
-                DBG.blogDebug("2");
-                if (true)
-                {
-                    DBG.blogDebug("3");
-                    Character attacker = hit.GetAttacker();
-                    DBG.blogDebug("4");
-                    if (attacker == __instance.GetComponent<Tameable>().GetPlayer(attacker.GetZDOID()))
-                    {
-                        DBG.blogDebug("5");
-                        return false;
-                    }
-                    DBG.blogDebug("6");
-                }
-                return true;
-            }
-
-            */
-
-
-        /* old getrninstances
-
-            [HarmonyPatch]
-        public class Reverse_SpawnSystem
-        {
-            [HarmonyReversePatch]
-            [HarmonyPatch]
-
-            public static int GetInstNum(GameObject prefab, Vector3 center, float maxRange, bool eventCreaturesOnly = false, bool procreationOnly = false)
-            {
-                // its a stub so it has no initial content
-                throw new NotImplementedException("It's a stub");
-            }
-            static MethodBase TargetMethod()
-            {
-                // use normal reflection or helper methods in <AccessTools> to find the method/constructor
-                // you want to patch and return its MethodInfo/ConstructorInfo
-                //
-                //var type = AccessTools.FirstInner(typeof(TheClass), t => t.Name.Contains("Stuff"));
-                MethodInfo tryGetMethod = typeof(SpawnSystem).GetMethods().First(m => m.Name == nameof(SpawnSystem.GetNrOfInstances) && m.GetParameters().Length == 5 && m.GetParameters()[0].ParameterType == typeof(UnityEngine.GameObject));
-                return tryGetMethod;
-            }
-        }
-
-
-        //[HarmonyPatch(typeof(SpawnSystem), nameof(SpawnSystem.GetNrOfInstances),new Type[] {typeof(GameObject), typeof(Vector3) })]
-        //[HarmonyPrefix]
-        [HarmonyPatch]
-        class Prefix_GetNrOfInstances
-        {
-            static MethodBase TargetMethod()
-            {
-                // use normal reflection or helper methods in <AccessTools> to find the method/constructor
-                // you want to patch and return its MethodInfo/ConstructorInfo
-                //
-                //var type = AccessTools.FirstInner(typeof(TheClass), t => t.Name.Contains("Stuff"));
-                MethodInfo tryGetMethod = typeof(SpawnSystem).GetMethods().First(m => m.Name == nameof(SpawnSystem.GetNrOfInstances) && m.GetParameters().Length == 5 && m.GetParameters()[0].ParameterType == typeof(UnityEngine.GameObject));
-                return tryGetMethod;
-            }
-            private static bool Prefix(GameObject prefab, Vector3 center, float maxRange, ref int __result, bool eventCreaturesOnly = false, bool procreationOnly = false)
-            {
-                //DBG.blogDebug("Starting InstNum Prefix for "+prefab.name);
-                // DBG.blogDebug("prefab=" + prefab.name);
-                int sum = 0;
-                try
-                {
-                    
-                    sum += Reverse_SpawnSystem.GetInstNum(prefab, center, maxRange, eventCreaturesOnly, procreationOnly);
-                }
-                catch
-                {
-                    DBG.blogWarning("ERROR: Failed initial GetInstNum");
-                } //if fails do not add
-                if (prefab.GetComponent<Tameable>() != null)
-                {
-                    try
-                    {
-                        if (CompatMatesList.TryGetValue(prefab.name, out List<string> mates))
-                        {
-                            ZNetScene zns = ZNetScene.instance;
-                            foreach (var mate in mates)
-                            {
-                                if (zns.GetPrefab(mate))
-                                {
-                                    int added = 0;
-                                    try
-                                    {
-                                        added = Reverse_SpawnSystem.GetInstNum(zns.GetPrefab(mate), center, maxRange, eventCreaturesOnly, procreationOnly);
-                                    }
-                                    catch{added = 0;} //if fails do not add
-                                    if (added > 0)
-                                    {
-                                        //DBG.blogDebug("Added " + added + " of " + mate + "to instnum for " + prefab.name);
-                                    }
-                                    sum += added;
-                                }
-                                else
-                                {
-                                    DBG.blogDebug("Failed to find mate of " + mate + "to instnum for " + prefab.name);
-                                }
-                            }
-
-                        }
-                    }
-                    catch { DBG.blogDebug("Error in finding mate for " + prefab.name); }
-                }
-                __result = sum;
-                return false;
-            }
-
-        }
-
-        */ // old getnrinstances
-
-        public static int Safe_GetNrOfInstances(GameObject prefab, Vector3 center, float maxRange, bool isError, bool eventCreaturesOnly =false, bool procreationOnly=false)
-        {
-            if (isError)
-            {
-                DBG.blogWarning("****Failed Default Number of Instances****");
-                DBG.blogDebug("Prefab is null= " + !(prefab ?? false));
-                try { DBG.blogDebug("center: = " + center); } catch { }
-                try { DBG.blogDebug("maxRange: = " + maxRange); } catch { }
-                try { DBG.blogDebug("eventCreaturesOnly: = " + eventCreaturesOnly); } catch { }
-                try { DBG.blogDebug("procreationOnly: = " + procreationOnly); } catch { }
-                try { DBG.blogDebug("prefab.transform: = " + prefab.transform); } catch { }
-                try { DBG.blogDebug("prefab.name: = " + prefab.name); } catch { }
-                try { DBG.blogDebug("prefab.gameObject.name: = " + prefab.gameObject.name); } catch { }
-                try { DBG.blogDebug("prefab.ToString(): = " + prefab.ToString()); } catch { }
-                try { DBG.blogDebug("prefab.GetComponent<BaseAI>() != null: = " + prefab.GetComponent<BaseAI>() != null);} catch { }
-                
-
-
-            }
-            string text = prefab.name + "(Clone)";
-            if (prefab.GetComponent<BaseAI>() != null)
-            {
-                
-                List<BaseAI> allInstances = BaseAI.GetAllInstances();
-                int num = 0;
-                if (isError)
-                {
-                    try { DBG.blogWarning("allInstances:= " + allInstances.Count); } catch { }
-                }
-                
-                foreach (BaseAI item in allInstances)
-                {
-                    if (isError)
-                    {
-                        try { DBG.blogDebug("item.gameObject.name:= " + item.gameObject.name); } catch { }
-                        try { DBG.blogDebug("Vector3.Distance(center, item.transform.position:= " + Vector3.Distance(center, item.transform.position)); } catch { }
-                        MonsterAI monsterAI = item as MonsterAI;
-                        Procreation component = item.GetComponent<Procreation>();
-                        try {DBG.blogDebug("MonsterAI:= " + monsterAI); } catch { }
-                        try { DBG.blogDebug("!monsterAI.IsEventCreature():= " + !monsterAI.IsEventCreature()); } catch { }
-                        try { DBG.blogDebug("component:= " + component); } catch { }
-                        try { DBG.blogDebug("!component.ReadyForProcreation():= " + !component.ReadyForProcreation()); } catch { }
-                    }
-                    if (item.gameObject.name != text || (maxRange > 0f && Vector3.Distance(center, item.transform.position) > maxRange))
-                    {
-                        continue;
-                    }
-                    if (eventCreaturesOnly)
-                    {
-                        MonsterAI monsterAI = item as MonsterAI;
-                        if ((bool)monsterAI && !monsterAI.IsEventCreature())
-                        {
-                            continue;
-                        }
-                    }
-                    if (procreationOnly)
-                    {
-                        Procreation component = item.GetComponent<Procreation>();
-                        if ((bool)component && !component.ReadyForProcreation())
-                        {
-                            continue;
-                        }
-                    }
-                    num++;
-                }
-                return num;
-                
-            }
-            GameObject[] array = GameObject.FindGameObjectsWithTag("spawned");
-            if (isError)
-            {
-                try { DBG.blogWarning("array:= " + array); } catch { }
-            }
-            int num2 = 0;
-            GameObject[] array2 = array;
-            foreach (GameObject gameObject in array2)
-            {
-                if (isError)
-                {
-                    try { DBG.blogDebug("gameObject.name:= " + gameObject.name); } catch { }
-                    try { DBG.blogDebug("Vector3.Distance(center, gameObject.transform.position:= " + Vector3.Distance(center, gameObject.transform.position)); } catch { }
-                }
-                if (gameObject.name.StartsWith(text) && (!(maxRange > 0f) || !(Vector3.Distance(center, gameObject.transform.position) > maxRange)))
-                {
-                    num2++;
-                }
-            }
-            return num2;
-        }
-
-
-
-        [HarmonyPrefix]
-        [HarmonyPatch(typeof(Procreation), "Procreate")]
-
-        private static void PrefixProcreation(Procreation __instance)
-        {
-            if (!(__instance.m_myPrefab ?? false) | !(__instance.m_offspringPrefab ?? false)) //prefab is null
-            {
-                //DBG.blogDebug("Procreation Initialised Prefabs");
-                InitProcPrefabs(__instance);
-            }
-            else
-            {
-            }
-        }
-
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(Procreation), "MakePregnant")]
-
-        private static void PostfixMakePregnant(Procreation __instance)
-        {
-            string prefname = __instance.name.Replace("(Clone)", ""); ;
-            //DBG.blogDebug("prefname=" + prefname);
-            //get offspring
-            DBG.blogDebug("Make Pregnant");
-            //__instance.m_nview.GetZDO().Set("OffspringName", __instance.m_offspring.name);
-            initRandomOffspring(prefname, __instance,true);
-        }
-
-
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(Procreation), "ResetPregnancy")]
-
-        private static void PostfixResetPregnancy(Procreation __instance) //makes sure that offspring is still valid
-        {
-            string prefname = __instance.name.Replace("(Clone)", ""); ;
-            //DBG.blogDebug("prefname=" + prefname);
-            //get offspring
-            string offspringName = RPC.RPC.GetOffspring(__instance);
-            if((offspringName+ "") != "")
-            {
-                initRandomOffspring(prefname, __instance);
-                DBG.blogDebug("offspringName=" + offspringName);
-                ZNetScene zns = ZNetScene.instance;
-                GameObject prefab = zns.GetPrefab(offspringName);
-                if (prefab != null)
-                {
-                    DBG.blogDebug("prefab=" + prefab.name);
-                    __instance.m_offspring = prefab;
-                    __instance.m_offspringPrefab = prefab;
-                }
-                else
-                {
-                    DBG.blogDebug("Failed to get random offspring");
-                    initRandomOffspring(prefname, __instance,true); 
-                }
-            }
-            else
-            {
-                initRandomOffspring(prefname, __instance, true);
-            }
-        }
-
-        private static void initRandomOffspring(string prefabname, Procreation proc, bool changeOff = false)
-        {
-            if (cfgList.TryGetValue(prefabname, out TameTable tmtbl))
-            {
-                DBG.blogDebug("found prefab, " + prefabname);
-                if ((tmtbl.specificOffspringString + "") != "")
-                {
-                    //DBG.blogDebug("specificOffspringString=" + cfgfile.specificOffspringString);
-                    if (tmtbl.ListofRandomOffspring.Count() == 0)
-                    {
-                        //List<string[]> partnerList = new List<string[]>();
-                        DBG.blogDebug("initOffspring");
-
-                        List<specificMates> specMates = new List<specificMates>();
-                        Dictionary<string, string> partnersDict = new Dictionary<string, string>();
-                        string[] partners = tmtbl.specificOffspringString.Split(',');
-                        //DBG.blogDebug(partners.ToString());
-                        partners = partners.Skip(1).ToArray();
-                        //DBG.blogDebug(partners.ToString());
-                        foreach (string combinedValue in partners)
-                        {
-                            string[] splitValue = combinedValue.Replace(")", "").Split('(');
-                            partnersDict.Add(splitValue[0], splitValue[1]);
-                            //DBG.blogDebug("key=" + splitValue[0] + ", value=" + splitValue[1]);
-                            specificMates addPartner = new specificMates();
-                            addPartner.prefabName = splitValue[0];
-                            string[] prefchances = splitValue[1].Split('/');
-                            float totalchance = 0;
-                            foreach (string chancepkg in prefchances)
-                            {
-                                chanceOffspring chanceoff = new chanceOffspring();
-                                string[] pref_and_chance = chancepkg.Split(':');
-                                string prefname = pref_and_chance[0];
-                                GameObject mate_go = ZNetScene.instance.GetPrefab(prefname);
-                                if (mate_go != null)
-                                {
-                                    DBG.blogDebug("found go for " + mate_go.name);
-                                    //Procreation mate_proc = mate_go.GetComponent<Procreation>();
-                                    if (mate_go.GetComponent<Procreation>() != null)
-                                    {
-                                        chanceoff.offspring = mate_go.GetComponent<Procreation>().m_offspring;
-                                        DBG.blogDebug("chanceoff.offspring=" + chanceoff.offspring.name);
-                                    }
-                                    else
-                                    {
-                                        Growup this_growup = proc.m_offspring.GetComponent<Growup>();
-                                        if (this_growup != null)
-                                        {
-                                            chanceoff.offspring = PetManager.SpawnMini(mate_go, this_growup.m_growTime);
-                                        }
-                                        else
-                                        {
-                                            DBG.blogDebug("growup null");
-                                            chanceoff.offspring = PetManager.SpawnMini(mate_go);
-                                        }
-
-                                        DBG.blogDebug("chanceoff.offspring=" + chanceoff.offspring.name);
-                                    }
-                                    try { chanceoff.chance = float.Parse(pref_and_chance[1]); }
-                                    catch { DBG.blogWarning("Not a valid float for chance for " + proc.name); }
-                                    //DBG.blogDebug("chanceoff.chance=" + chanceoff.chance);
-                                    totalchance += chanceoff.chance;
-                                    addPartner.possibleOffspring.Add(chanceoff);
-                                }
-                                else
-                                {
-                                    DBG.blogWarning("could not find prefab:" + prefname + " when trying to mate with " + proc.name);
-                                }
-
-                            }
-                            DBG.blogDebug("totalchance=" + totalchance);
-                            if (totalchance < 100)
-                            {
-                                chanceOffspring defaultOff = new chanceOffspring();
-                                defaultOff.chance = 100 - totalchance;
-                                defaultOff.offspring = proc.m_offspring;
-                                addPartner.possibleOffspring.Add(defaultOff);
-                            }
-                            specMates.Add(addPartner);
-
-                        }
-                        tmtbl.ListofRandomOffspring = specMates;
-                        foreach (specificMates specmates in tmtbl.ListofRandomOffspring)
-                        {
-                            DBG.blogDebug("specmates.prefabName=" + specmates.prefabName);
-                            foreach (chanceOffspring chancepkg in specmates.possibleOffspring)
-                            {
-                                DBG.blogDebug("     chancepkg.offspring.name=" + chancepkg.offspring.name);
-                                DBG.blogDebug("     chancepkg.chance=" + chancepkg.chance);
-                            }
-                        }
-                    }
-                    if (changeOff)
-                    {
-                        changeOffspring(proc, tmtbl.ListofRandomOffspring);
-                    }
-                }
-                
-            }
-        }
-        private static void changeOffspring(Procreation proc, List<specificMates> mates)
-        {
-            DBG.blogDebug("changeOffspring");
-            /*
-            //List<string[]> partnerList = new List<string[]>();
-            DBG.blogDebug("changeOffspring");
-            Dictionary<string, string> partnersDict = new Dictionary<string, string>();
-            string[] partners = spec_str.Split(',');
-            //DBG.blogDebug(partners.ToString());
-            partners = partners.Skip(1).ToArray();
-            //DBG.blogDebug(partners.ToString());
-            foreach(string combinedValue in partners)
-            {
-                string[] splitValue = combinedValue.Replace(")", "").Split('(');
-                partnersDict.Add(splitValue[0], splitValue[1]);
-                DBG.blogDebug("key=" + splitValue[0]+", value="+ splitValue[1]);
-            }
-            */
-            Character partner = getPartner(proc.GetComponentInParent<BaseAI>());
-            string prefname = partner.name.Replace("(Clone)", "");
-            DBG.blogDebug("partner=" + prefname);
-            specificMates foundMate = null;
-            foreach (specificMates mate in mates)
-            {
-                if(mate.prefabName == prefname)
-                {
-                    foundMate = mate;
-                    break;
-                }
-            }
-            if (foundMate != null)
-            {
-                //foundMate.possibleOffspring
-                float rndm = UnityEngine.Random.Range(0f, 100f);
-                float currentchance = 0;
-                
-                foreach(chanceOffspring chanceOff in foundMate.possibleOffspring)
-                {
-                    currentchance += chanceOff.chance;
-                    if(currentchance>= rndm)
-                    {
-                        DBG.blogDebug("currentchance=" + currentchance + ", rndm=" + rndm);
-                        proc.m_offspring = chanceOff.offspring;
-                        proc.m_offspringPrefab = chanceOff.offspring;
-                        DBG.blogDebug("proc.m_offspring=" + proc.m_offspring.name);
-
-                        proc.m_nview.GetZDO().Set("OffspringName", proc.m_offspring.name);
-                        break;
-                    }
-                }
-            }
-            /*
-            if(partnersDict.TryGetValue(partner.name.Replace("(Clone)", ""), out var chancesStr))
-            {
-                DBG.blogDebug("chancesStr=" + chancesStr);
-                string[] prefchances = chancesStr.Split('/');
-                float rndm = UnityEngine.Random.Range(0, 100);
-                float currentchance = 0;
-                foreach(string chancepkg in prefchances)
-                {
-                    string[] pref_and_chance = chancepkg.Split(':');
-                    string prefname = pref_and_chance[0];
-                    float chance = 0;
-                    try {chance = float.Parse(pref_and_chance[1]);}catch { }
-                    currentchance = Mathf.Min(100, currentchance + chance);
-                    DBG.blogDebug("currentchance=" + currentchance + ", rndm=" + rndm);
-                    if(currentchance > rndm)
-                    {
-                        GameObject mate_go = ZNetScene.instance.GetPrefab(prefname);
-                        if (mate_go != null)
-                        {
-                            DBG.blogDebug("found go for " + mate_go.name);
-                            Procreation mate_proc = mate_go.GetComponent<Procreation>();
-                            if(mate_go.GetComponent<Procreation>() != null)
-                            {
-
-                                proc.m_offspringPrefab = mate_go.GetComponent<Procreation>().m_offspring;
-                                DBG.blogDebug("proc.m_offspring=" + proc.m_offspring.name);
-                                break;
-                            }
-
-                        }
-                        else
-                        {
-                            DBG.blogWarning("could not find prefab:" + prefname + " when trying to mate with " + proc.name);
-                        }
-                    }
-                }
-            }
-            else
-            {
-                Procreation partner_proc = partner.GetComponentInParent<Procreation>();
-
-                DBG.blogDebug("partner offspring=" + partner_proc.m_offspringPrefab.name);
-            }
-            */
-            
-        }
-
-        public static Character getPartner(BaseAI baseAI)
-        {
-            Character partner = null;
-            float num = 999999f;
-            //BaseAI baseAI = GetComponentInParent<BaseAI>();
-            List<Character> characters = Character.GetAllCharacters();
-            //DBG.blogDebug("This char is:" + baseai.gameObject.name);
-            //List<string> possiblemates = Plugin.CompatMatesList[baseai.gameObject.name];
-            if (!Plugin.CompatMatesList.TryGetValue(Utils.GetPrefabName(baseAI.gameObject), out var possiblemates))
-            {
-                possiblemates = new List<string> { Utils.GetPrefabName(baseAI.gameObject) };
-            }
-            List<string> clonemates = new List<string>();
-            ZNetScene zns = ZNetScene.instance;
-            clonemates.Add(baseAI.gameObject.name);
-            foreach (string str in possiblemates)
-            {
-                clonemates.Add(str + "(Clone)");
-            }
-            // DBG.blogDebug("clonemates= " + string.Join(":", clonemates));
-
-            foreach (Character character in characters)
-            {
-                if (!(character.gameObject == baseAI.gameObject) && clonemates.Contains(character.gameObject.name) && character.GetComponent<ZNetView>().IsValid())// && !(Vector3.Distance(character.transform.position, base.transform.position) > 40))
-                {
-
-                    float num2 = Vector3.Distance(character.transform.position, baseAI.transform.position);
-                    if (num2 < num)
-                    {
-                        DBG.blogDebug("character with name go:" + character.gameObject.name + " is " + Vector3.Distance(character.transform.position, baseAI.transform.position) + "m away");
-                        partner = character;
-                        num = num2;
-                    }
-
-                }
-                //if (clonemates.Contains(character.gameObject.name))
-                //{
-                //    DBG.blogDebug("found clone with name " + character.gameObject.name);
-                //}
-            }
-            return partner;
-        }
-
-
-        public static void InitProcPrefabs(Procreation _proc)
-        {
-            string prefabName = Utils.GetPrefabName(_proc.m_offspring);
-            _proc.m_offspringPrefab = ZNetScene.instance.GetPrefab(prefabName);
-            int prefab = _proc.m_nview.GetZDO().GetPrefab();
-            _proc.m_myPrefab = ZNetScene.instance.GetPrefab(prefab);
-            //DBG.blogDebug("Initialised Proc Prefabs");
-            if (!(_proc.m_myPrefab ?? false))
-            {
-                DBG.blogDebug("m_myPrefab is still Null, trying again");
-                DBG.blogDebug(_proc.name);
-
-                string proc_name = _proc.name.Replace("(Clone)", "");
-                DBG.blogDebug("proc_name=" + proc_name);
-                if (ZNetScene.instance.GetPrefab(proc_name) == null)
-                {
-                    DBG.blogDebug("proc_name failed");
-                }
-                else
-                {
-                    _proc.m_myPrefab = ZNetScene.instance.GetPrefab(proc_name);
-                }
-                if (!(_proc.m_myPrefab ?? false))
-                {
-                    DBG.blogDebug("m_myPrefab backup failed");
-                }
-                else
-                {
-                    DBG.blogDebug("m_myPrefab backup success");
-                }
-            }
-            if (!(_proc.m_offspringPrefab ?? false))
-            {
-                DBG.blogDebug("m_offspringPrefab is still Null, trying again");
-                string proc_offspring_name = _proc.m_offspring.name;
-                DBG.blogDebug("Failed prefabName=" + prefabName);
-                //_proc.m_offspringPrefab = ZNetScene.instance.GetPrefab(proc_offspring_name);
-
-                _proc.m_offspringPrefab = _proc.m_offspring;
-                if (!(_proc.m_offspringPrefab ?? false))
-                {
-
-                    DBG.blogDebug("m_offspringPrefab backup failed :"+ (_proc.m_offspringPrefab==null));
-                }
-                else
-                {
-                    DBG.blogDebug("m_offspringPrefab backup success");
-                }
-
-            }
-        }
-
-
-
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(SpawnSystem), "GetNrOfInstances", new Type[] { typeof(GameObject), typeof(Vector3),typeof(float),typeof(bool),typeof(bool) })]
-        //private static class Prefix_Player_SetLocalPlayer
-        //{
-        private static void Postfix_SpawnSystem_GetNrOfInstances(GameObject prefab, Vector3 center, float maxRange, bool eventCreaturesOnly, bool procreationOnly, ref int __result)
-        {
-            int sum = __result;
-            if (prefab.GetComponent<Tameable>() != null)
-            {
-                try
-                {
-                    if (CompatMatesList.TryGetValue(prefab.name, out List<string> mates))
-                    {
-                        //DBG.blogDebug("Has more mates");
-                        if (cfgList.TryGetValue(prefab.name, out TameTable cfgfile)) 
-                        {
-                            if (!cfgfile.canMateWithSelf)
-                            {
-                                int previous_sum = sum-1;
-                                sum = 1;
-                                //DBG.blogDebug("Cannot Mate with same prefab, " + previous_sum + " removed from total nearby, " +
-                                //    "newsum ="+ sum);
-                            }
-                        }
-                        ZNetScene zns = ZNetScene.instance;
-                        foreach (var mate in mates)
-                        {
-                            if (zns.GetPrefab(mate))
-                            {
-                                int added = 0;
-                                try
-                                {
-                                    added = Safe_GetNrOfInstances(zns.GetPrefab(mate), center, maxRange, false, eventCreaturesOnly, procreationOnly);
-                                }
-                                catch 
-                                { 
-                                    added = 0;
-                                    DBG.blogDebug("Failed to add "+mate+":error");
-                                } //if fails do not add
-                                if (added > 0)
-                                {
-                                    //DBG.blogDebug("Added " + added + " of " + mate + "to instnum for " + prefab.name);
-                                }
-                                sum += added;
-                            }
-                            else
-                            {
-                                DBG.blogDebug("Failed to find mate of " + mate + "to instnum for " + prefab.name);
-                            }
-                        }
-
-                    }
-                }
-                catch { DBG.blogDebug("Error in finding mate for " + prefab.name); }
-            }
-            __result = sum;
-            return;
-        }
-
-        /*
-        [HarmonyPrefix]
-        [HarmonyPatch(typeof(SpawnSystem), "GetNrOfInstances")]
-        private static void Prefix_SpawnSystem_GetNrOfInstances(GameObject prefab, Vector3 center, float maxRange, bool eventCreaturesOnly, bool procreationOnly)
-        {
-            DBG.blogDebug("GetNrInstances:" + prefab.name);
-        }
-        */
-
-
-
-
-        /*
-        private static class Postfix_GetNrOfInstances
-        {
-            private static void Postfix()
-            {
-
-            }
-        }
-        */
+       
 
         public static ConfigEntry<int> nexusID;
 
@@ -1366,6 +431,8 @@ namespace AllTameable
 
         public static ConfigEntry<float> TamedFedMultiplier;
 
+        public static ConfigEntry<bool> UseSimple;
+
         public static ManualLogSource logger;
 
         public static Dictionary<string, TameTable> cfgList = new Dictionary<string, TameTable>();
@@ -1386,6 +453,8 @@ namespace AllTameable
         public static EffectList.EffectData firework = new EffectList.EffectData();
 
         public static bool loaded = false;
+
+        public static bool is_Basic = true;
 
         public static bool listloaded = false;
         public static bool PreSetMinis = true;
@@ -1427,13 +496,12 @@ namespace AllTameable
             cfg = base.Config.Bind("1General", "Settings", "Hatchling,true,600,300,30,10,300,10,RawMeat,true,true,5,0.33,10,300"
                 , "name,commandable,tamingTime,fedDuration,consumeRange,consumeSearchInterval,consumeHeal,consumeSearchRange,consumeItem:consumeItem,changeFaction,procretion,maxCreatures,pregnancyChance,pregnancyDuration,growTime,;next one;...;last one");
             useTamingTool = base.Config.Bind("1General", "useTamingTool", defaultValue: true, "Use a taming tool to have an overlay when hovering over a creature");
+            UseSimple = base.Config.Bind("1General", "useSimpleFeatures", defaultValue: false, "Choose whether to reduce the features to only allow for the taming of extra creatures although no complex procreation behavior");
             debugout = base.Config.Bind("1General", "Debug Output", defaultValue: false, "Determines if debug is output to bepinex log");
             UseCLLC_Config = base.Config.Bind("2DragonEgg", "Use CLLC Level", defaultValue: true,
                 new ConfigDescription("Determines if you want to attempt to use CLLC to determine the level of your hatchling", null, new ConfigurationManagerAttributes { IsAdminOnly = true }));
             LvlProb = base.Config.Bind("2DragonEgg", "Hatchling Level Probabilities", "75,25,5",
                 new ConfigDescription("List of the probabilities for a hatchling to spawn at a specific level ex: 75,25,5 will have a 75% chance to have 0 stars, 25% to have 1, and 5% to have two", null, new ConfigurationManagerAttributes { IsAdminOnly = true }));
-            SeekerBroodOffspring = base.Config.Bind("3Custom Procreation", "SeekerBrood as offspring of Seekers", defaultValue: true,
-                new ConfigDescription("Determines if you want to attempt to have the seeker offspring be the Seeker Broods instead of Mini Seekers (Seeker Broods will not grow into Seekers)", null, new ConfigurationManagerAttributes { IsAdminOnly = true }));
             UseCustomProcreation = base.Config.Bind("3Custom Procreation", "Is Custom Procreation Enabled", defaultValue: true,
                 new ConfigDescription("Determines if you want to attempt to use CLLC integration for level/effects/infusion", null, new ConfigurationManagerAttributes { IsAdminOnly = true }));
             AllowMutation = base.Config.Bind("3Custom Procreation", "Allow Mutation", defaultValue: true,
@@ -1447,6 +515,8 @@ namespace AllTameable
             TamedFedMultiplier = base.Config.Bind("1General", "TamedFedMultiplier", defaultValue: 1f,
                 new ConfigDescription("Determines if after being tamed how much longer the creature will stay fed", null, new ConfigurationManagerAttributes { IsAdminOnly = true }));
 
+
+            is_Basic = UseSimple.Value;
             listloaded = TameListCfg.Init();
             if (!listloaded)
             {
@@ -1476,13 +546,6 @@ namespace AllTameable
 
             SceneManager.sceneLoaded += OnSceneLoaded;
             UnityEngine.Object.DontDestroyOnLoad(Root);
-            PerformPatches();
-            // Harmony.CreateAndPatchAll(Assembly.GetExecutingAssembly());
-
-            //scanMethods();
-            //applyPatches();
-
-
             if (UseCLLC_Config.Value)
             {
                 try
@@ -1500,6 +563,14 @@ namespace AllTameable
                 UseCLLC = false;
                 //DBG.blogDebug("CLLC Disabled");
             }
+            PerformPatches();
+            // Harmony.CreateAndPatchAll(Assembly.GetExecutingAssembly());
+
+            //scanMethods();
+            //applyPatches();
+
+
+            
             //clientInit();
             DBG.blogInfo("AllTameable Loaded");
             if (useTamingTool.Value)
@@ -1541,109 +612,6 @@ namespace AllTameable
 
 
 
-
-
-
-
-
-
-            /*
-            private IEnumerator jot_RPCServerReceive(long sender, ZPackage package)
-            {
-                DBG.blogDebug("Received Tamelist RPC Server");
-
-                if (RPC.RPC.tamelistPkg == null)
-                {
-                    DBG.blogDebug("Packing Tamelist Pkg");
-                    RPC.RPC.tamelistPkg = new RPC.CfgPackage.Pack();
-                }
-                if(RPC.RPC.tamelistPkg == null)
-                {
-                    DBG.blogDebug("RPC Still Null");
-                }
-                yield return null;
-
-                DBG.blogDebug("Sending now");
-                jot_TamelistRPC.SendPackage(ZNet.instance.m_peers, new ZPackage(RPC.RPC.tamelistPkg.GetArray()));
-                DBG.blogDebug("Sent");
-            }
-
-                        //yield return HalfSecondWait;
-
-                string dot = string.Empty;
-                for (int i = 0; i < 5; ++i)
-                {
-                    dot += ".";
-                    Jotunn.Logger.LogMessage(dot);
-                    DBG.blogDebug("Processing=" + jot_TamelistRPC.IsProcessing);
-                    DBG.blogDebug("Processing Other=" + jot_TamelistRPC.IsProcessingOther);
-                    DBG.blogDebug("Receiving=" + jot_TamelistRPC.IsReceiving);
-                    DBG.blogDebug("IsSending=" + jot_TamelistRPC.IsSending);
-                    yield return HalfSecondWait;
-                }
-
-
-
-
-            // React to the RPC call on a client
-            private IEnumerator jot_RPCClientReceive(long sender, ZPackage package)
-            {
-                DBG.blogDebug("Received Tamelist RPC Client");
-                if (jot_TamelistRPC.IsProcessingOther)
-                {
-                    yield break;
-                }
-                yield return null;
-
-
-                if (package == null)
-                {
-                    DBG.blogDebug("Client RPC Still Null");
-                }
-                if (package.GetArray().Length<1)
-                {
-                    DBG.blogDebug("Client RPC too short");
-                }
-                DBG.blogDebug("Jotunn Unpack Tamelist RPC");
-                //byte[] array = package.ReadByteArray();
-                //DBG.blogDebug("made byte array");
-                //DBG.blogDebug("Size="+ package.Size());
-                //DBG.blogDebug("String=" + package.ToString());
-                try
-                {
-                    RPC.CfgPackage.Unpack(package);
-                    PetManager.UpdatesFromServer();
-                }
-                catch
-                {
-                    DBG.blogDebug("Failed Unpack");
-                }
-
-            }
-            */
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
             public static bool CheckHuman(GameObject go)
         {
             try
@@ -1668,27 +636,48 @@ namespace AllTameable
                 harmony.PatchAll(typeof(global::RRRCoreTameable.RRRCoreTameable));
             }
 
+            
+
             DBG.blogInfo("Patching Select");
             harmony.PatchAll(typeof(global::AllTameable.Plugin));
             DBG.blogDebug("Patched Plugin");
+            if (!is_Basic)
+            {
+                harmony.PatchAll(typeof(global::AllTameable.Genetics.Genetics));
+                DBG.blogDebug("Patched Genetics");
+                harmony.PatchAll(typeof(global::AllTameable.Trading.Trading));
+                DBG.blogDebug("Patched Trading");
+                if (UseCLLC)
+                {
+                    harmony.PatchAll(typeof(global::AllTameable.CLLC.CLLCPatches));
+                    DBG.blogDebug("Patched CLLCPatches");
+                    harmony.PatchAll(typeof(global::AllTameable.CLLC.CLLCPatches.InterceptProcreation));
+                    DBG.blogDebug("Patched InterceptProcreation");
+                    harmony.PatchAll(typeof(global::AllTameable.CLLC.CLLCPatches.InterceptGrowup));
+                    DBG.blogDebug("Patched InterceptProcreation");
+                }
+            }
+            else
+            {
+                DBG.blogDebug("Use Simple enabled so did not Patch Genetics,Trading, or CLLC if enabled");
+            }
+
             harmony.PatchAll(typeof(global::AllTameable.BetterTameHover));
             DBG.blogDebug("Patched Bettertamehover");
             harmony.PatchAll(typeof(global::AllTameable.AllTame_AnimalAI));
-            DBG.blogDebug("Patched animalAi");
-            harmony.PatchAll(typeof(global::AllTameable.RPC.RPC));
-            DBG.blogDebug("Patched RPC");
-            harmony.PatchAll(typeof(global::AllTameable.CLLC.CLLCPatches));
-            DBG.blogDebug("Patched CLLCPatches");
+            DBG.blogDebug("Patched AnimalAi");
+            
+            //harmony.PatchAll(typeof(global::AllTameable.RPC.RPC));
+            //DBG.blogDebug("Patched RPC");
+
             /*
             harmony.PatchAll(typeof(global::AllTameable.Plugin.Reverse_SpawnSystem));
             DBG.blogDebug("Patched ReverseSpawn");
             harmony.PatchAll(typeof(global::AllTameable.Plugin.Prefix_GetNrOfInstances));
             DBG.blogDebug("Patched Prefix_GetNrOfInstances");
             */
-            harmony.PatchAll(typeof(global::AllTameable.CLLC.CLLCPatches.InterceptProcreation));
-            DBG.blogDebug("Patched InterceptProcreation");
-            harmony.PatchAll(typeof(global::AllTameable.CLLC.CLLCPatches.InterceptGrowup));
-            DBG.blogDebug("Patched InterceptProcreation");
+            
+            
 
             var myOriginalMethods = harmony.GetPatchedMethods();
             foreach (var method in myOriginalMethods)
@@ -1819,6 +808,7 @@ namespace AllTameable
                 cfgList.Add(key, tameTable);
             }
             DBG.blogInfo("TameTable Loaded :" + cfgList.Count);
+
             return true;
         }
 

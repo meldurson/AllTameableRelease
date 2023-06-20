@@ -153,7 +153,7 @@ namespace AllTameable
             }
 
             }
-            catch (Exception ex){}
+            catch (Exception){ } //catch (Exception ex){}
             return true;
         }
 

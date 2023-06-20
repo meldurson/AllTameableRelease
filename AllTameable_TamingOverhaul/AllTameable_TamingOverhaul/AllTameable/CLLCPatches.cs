@@ -11,11 +11,12 @@ namespace AllTameable.CLLC
 {
     internal class CLLCPatches
     {
+        /*
         [HarmonyPrefix]
         [HarmonyPatch(typeof(Procreation), "Procreate")]
         //private static class Prefix_Procreation_Procreate
         //{
-
+        
             private static void Prefix(Procreation __instance)
             {
                 if (Plugin.UseCustomProcreation.Value)
@@ -45,6 +46,25 @@ namespace AllTameable.CLLC
                 }
 
             }
+        */
+
+        /*
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(Procreation), "ResetPregnancy")]
+
+        private static void PostfixResetPregnancy(Procreation __instance) //makes sure that offspring is still valid
+        {
+            if (Plugin.UseCLLC)
+            {
+                if (__instance.gameObject.GetComponent<ProcreationInfo>() == null)
+                {
+                    __instance.gameObject.AddComponent<ProcreationInfo>();
+                }
+            }
+        }
+
+        */
+
         //}
         //[HarmonyPrefix]
         [HarmonyPatch(typeof(Character), "SetLevel")]
@@ -59,6 +79,8 @@ namespace AllTameable.CLLC
                 try
                 {
                     level = __instance.gameObject.GetComponent<ProcreationInfo>().GetLevel(level);
+                    DBG.blogDebug("level is " +level);
+                //level = 0;
                     //DBG.blogDebug("Found ProcInfo");
                 }
                 catch 
@@ -69,41 +91,81 @@ namespace AllTameable.CLLC
             }
         //}
 
+        /*
+        [HarmonyPatch(typeof(Procreation), nameof(Procreation.Procreate))]
+        public static class Patch_Procreation_Procreate
+        {
+            private static void Prefix(Procreation __instance)
+            {
+                if (__instance.IsDue())
+                {
+                    // Set up and change the prefab here
+                    string prefabName = Utils.GetPrefabName(__instance.m_offspring);
+                    __instance.m_offspringPrefab = ZNetScene.instance.GetPrefab(prefabName);
+                    // Insert changes to __instance.m_offspringPrefab
+
+                    // Code that will get skipped, need to run it
+                    int prefab = __instance.m_nview.GetZDO().GetPrefab();
+                    __instance.m_myPrefab = ZNetScene.instance.GetPrefab(prefab);
+                }
+            }
+        }
+
+        [HarmonyPatch(typeof(Procreation), nameof(Procreation.ResetPregnancy))]
+        public static class Patch_Procreation_ResetPregnancy
+        {
+            private static void Postfix(Procreation __instance)
+            {
+                // Reset the original prefab
+                __instance.m_offspringPrefab = null;
+            }
+        }
+
+        */
+
+
+
+
+
+
+
+
+
+        //[HarmonyEmitIL("./dumps")]
         [HarmonyPatch(typeof(Procreation), nameof(Procreation.Procreate))]
         public static class InterceptProcreation
         {
             private static GameObject OnProcreation(GameObject child, Procreation procreation)
             {
-                //DBG.blogDebug("inOnprocreation");
+
+                if (!Plugin.UseCLLC)
+                {
+                    return child;
+                }
+
+                Character childchar = child.GetComponent<Character>();
+                Character motherRef = procreation.gameObject.GetComponent<Character>();
+                if (!(bool)childchar)
+                {
+                    DBG.blogWarning("Procreation, No Child");
+                    return child;
+                }
+                else if (!(bool)motherRef)
+                {
+                    DBG.blogWarning("No Parent, setting tame and level manually");
+                    childchar.SetTamed(true);
+                    childchar.SetLevel(1);
+                    return child;
+                }
                 try
                 {
-                    //if (UnityEngine.Random.Range(0, 100) < 10)
-                    //{
-                    //    DBG.blogDebug("Throwing Error");
-                    //    throw new NullReferenceException();
-                    //}
-                    
-                    if (Plugin.UseCLLC)
+                    if (!child.gameObject.TryGetComponent<ProcreationInfo>(out var childProc))
                     {
-                        //DBG.blogDebug("hasCLLC");
-                        if (!child.gameObject.TryGetComponent<ProcreationInfo>(out var childProc))
-                        {
-                            //DBG.blogDebug("Adding Procinfo");
-                            childProc = child.gameObject.AddComponent<ProcreationInfo>();
-                        }
-                        Character motherRef = procreation.gameObject.GetComponent<Character>();
-                        if (motherRef != null)
-                        {
-                            //DBG.blogDebug("Mother not Null");
-                            childProc.SetCreature(motherRef);
-                        }
-                        else
-                        {
-                            DBG.blogDebug("Mother is Null");
-                        }
-
-
+                        //DBG.blogDebug("Adding Procinfo");
+                        childProc = child.gameObject.AddComponent<ProcreationInfo>();
                     }
+                    DBG.blogDebug("Attempting Custom Procreation");
+                    childProc.SetCreature(motherRef);
                 }
                 catch
                 {
@@ -139,6 +201,7 @@ namespace AllTameable.CLLC
 
         }
 
+        //[HarmonyEmitIL("./dumps")]
         [HarmonyPatch(typeof(Growup), nameof(Growup.GrowUpdate))]
         public static class InterceptGrowup
         {
@@ -146,23 +209,41 @@ namespace AllTameable.CLLC
             private static GameObject OnGrowup(GameObject child, Growup growup)
             {
                 DBG.blogDebug("inOnGrowup");
-                if (Plugin.UseCLLC)
+                DBG.blogDebug("child="+ child.name);
+                if (!Plugin.UseCLLC)
                 {
-                    try
-                    {
-                        DBG.blogDebug("hasCLLC");
-                        Character childchar = child.GetComponent<Character>();
-                        Character growchar = growup.gameObject.GetComponent<Character>();
-                        ProcreationInfo procinfo = childchar.gameObject.AddComponent<ProcreationInfo>();
-                        //throw new Exception("Try to duplicate");
-                        procinfo.SetGrow(growchar);
-                    }
-                    catch
-                    {
-                        DBG.blogWarning("Failed Custom Growup");
-                    }
+                    return child;
+                }
+                Character childchar = child.GetComponent<Character>();
+                Character growchar = growup.gameObject.GetComponent<Character>();
+                if (!(bool)childchar)
+                {
+                    DBG.blogWarning("Growup, No Child");
+                    return child;
+                }
+                else if (!(bool)growchar)
+                {
+                    DBG.blogWarning("No Growup, setting tame and level manually");
+                    childchar.SetTamed(true);
+                    childchar.SetLevel(1);
+                    return child;
                 }
 
+                //DBG.blogDebug("Both child and growup valid, inheriting tame and level");
+                childchar.SetTamed(growchar.IsTamed());
+                childchar.SetLevel(growchar.GetLevel());
+                try
+                {
+                    DBG.blogDebug("Attempting custom Growup");
+
+                    ProcreationInfo procinfo = childchar.gameObject.AddComponent<ProcreationInfo>();
+                    //throw new Exception("Try to duplicate");
+                    procinfo.SetGrow(growchar);
+                }
+                catch
+                {
+                    DBG.blogWarning("Failed Custom Growup");
+                }
                 return child;
             }
 

@@ -31,11 +31,7 @@ namespace AllTameable.CLLC
             if (!GetComponentInParent<Growup>() & !GetComponentInParent<EggGrow>())
             {
                 Character thischar = gameObject.GetComponent<Character>();
-                if (!thischar.name.Contains("SeekerBrood") | Plugin.SeekerBroodOffspring.Value == false)
-                {
-                    ParentStart();
-                }
-
+                ParentStart();
             }
 
         }
@@ -164,9 +160,14 @@ namespace AllTameable.CLLC
         {
             //try
             //{
-            mom_info = mother.gameObject.GetComponent<ProcreationInfo>();
+            if (!mother.gameObject.TryGetComponent<ProcreationInfo>(out var momProc))
+            {
+                //DBG.blogDebug("Adding Procinfo");
+                momProc = mother.gameObject.AddComponent<ProcreationInfo>();
+            }
+            mom_info = momProc;
             mom_info.ParentStart();
-
+            //DBG.blogDebug("Parent started");
             CreatureExtraEffect mom_effect = API.GetExtraEffectCreature(mother);
             CreatureInfusion mom_infusion = API.GetInfusionCreature(mother);
             //ProcreationInfo mom_info = mother.gameObject.GetComponent<ProcreationInfo>();
@@ -178,6 +179,13 @@ namespace AllTameable.CLLC
 
             //Test Level
             level = mom_lvl;
+            //DBG.blogDebug("level="+ level);
+            //DBG.blogDebug("dadlevel=" + dad_lvl);
+            //DBG.blogDebug("dad_infusion=" + dad_infusion);
+            //DBG.blogDebug("dad_effect=" + dad_effect);
+            //DBG.blogDebug("mom_effect=" + mom_effect.ToString());
+            //DBG.blogDebug("mom_infusion=" + mom_infusion);
+
             if (Plugin.AllowMutation.Value && (UnityEngine.Random.Range(0, 100) < Plugin.MutationChance.Value))
             {
                 DBG.blogDebug("Has Mutation in Level");
@@ -200,22 +208,34 @@ namespace AllTameable.CLLC
             }
             newLevel = true;
 
-            if (API.IsInfusionEnabled())
+            //Sets the level
+            Character thischar = gameObject.GetComponent<Character>();
+            if(thischar != null)
             {
-                SetInfusion(mother);
+                thischar.SetLevel(level);
+                thischar.SetTamed(true);
             }
-            else
-            {
-                DBG.blogDebug("NoinfusionEnabled");
-            }
+
+            
 
             if (API.IsExtraEffectEnabled())
             {
+                //DBG.blogDebug("Setting Extra Effect");
                 SetExtraEffect(mother);
             }
             else
             {
                 DBG.blogDebug("NoExtraEffectEnabled");
+            }
+
+            if (API.IsInfusionEnabled())
+            {
+                //DBG.blogDebug("Setting Infusion");
+                SetInfusion(mother);
+            }
+            else
+            {
+                DBG.blogDebug("NoinfusionEnabled");
             }
 
             /*

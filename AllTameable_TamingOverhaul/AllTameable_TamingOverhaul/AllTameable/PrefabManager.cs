@@ -135,8 +135,7 @@ namespace AllTameable
             ItemManager.Instance.AddRecipe(tamingstickRecipe);
         }
 
-
-
+        
         private void EffectReg()
         {
             //ZNetScene zns = ZNetScene.instance;

@@ -46,6 +46,10 @@ namespace AllTameable
             DBG.blogDebug(tempstr);
 
         }
+        public static void create_TamelistCFG()
+        {
+
+        }
         private static void readTamelist(string path)
         {
             StreamReader streamreader = new StreamReader(path);
@@ -346,6 +350,7 @@ namespace AllTameable
                             else if (prop_key == "specificOffspring")
                             {
                                 tmtbl.specificOffspringString += ","+direct_value;
+                                
                             }
                         }
                         if (!started_manual)
