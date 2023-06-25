@@ -35,16 +35,6 @@ namespace AllTameable.CLLC
             }
         }
 
-        public void SetGrow_old(Character growchar)
-        {
-            Character thischar = gameObject.GetComponent<Character>();
-            if(thischar != null)
-            {
-                API.SetInfusionCreature(thischar, API.GetInfusionCreature(growchar));
-                API.SetExtraEffectCreature(thischar, API.GetExtraEffectCreature(growchar));
-            }
-        }
-
         public void SetGrow(Character adultchar)
         {
             Character thischar = gameObject.GetComponent<Character>();

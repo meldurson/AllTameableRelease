@@ -546,10 +546,10 @@ namespace AllTameable
                 else { DBG.blogInfo("Cannot be tamed by food"); }
 
 
-                if (Plugin.CheckHuman(go))
-                {
-                    DBG.blogDebug("isHuman: Procreation=" + tb.procretion);
-                }
+                //if (Plugin.CheckHuman(go))
+                //{
+                //    DBG.blogDebug("isHuman: Procreation=" + tb.procretion);
+                //}
 
                 if (tb.procretion)
                 {
@@ -565,13 +565,10 @@ namespace AllTameable
                     if (component3.m_pregnancyChance > 1) { component3.m_pregnancyChance *= 0.01f; }
                     if (component3.m_pregnancyChance > 1) { component3.m_pregnancyChance =0.66f; }
                     component3.m_pregnancyDuration = tb.pregnancyDuration;
-                    //if (component3.m_updateInterval < 20) { component3.m_updateInterval = 20; }
-                    component3.m_updateInterval = 6;
+                    if (component3.m_updateInterval < 20) { component3.m_updateInterval = 20; }
+                    //component3.m_updateInterval = 6; //For Debuging
                     component3.m_partnerCheckRange = 4f * tb.size;
                     component3.m_totalCheckRange = 10f * tb.size;
-
-                    
-
 
                     if (flag && component3.m_offspring != null && !Plugin.CheckHuman(go) && !tb.procretionOverwrite)
                     {
@@ -684,11 +681,7 @@ namespace AllTameable
             }
             string NamePrefix;
             if (!isHuman) { NamePrefix = "Mini"; }
-            else 
-            { 
-                NamePrefix = "Child";
-                DBG.blogDebug("Child is :"+ NamePrefix + text );
-            }
+            else { NamePrefix = "Child"; }
 
             gameObject.name = "Mini" + text;
             //DBG.blogDebug(gameObject.name);

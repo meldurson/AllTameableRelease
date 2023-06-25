@@ -108,14 +108,8 @@ namespace AllTameable.RRRCoreTameable
 
         public static bool CheckHuman(GameObject go)
         {
-            try
-            {
-                return go.GetComponent<RRRNpcCustomization>().IsNotNull();
-            }
-            catch
-            {
-                return false;
-            }
+            try{ return go.GetComponent<RRRNpcCustomization>().IsNotNull(); }
+            catch{return false;}
         }
         /*
         public static bool CheckRRRData(GameObject go)

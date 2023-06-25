@@ -512,7 +512,7 @@ namespace AllTameable.Genetics
                             }
                             else
                             {
-                                //DBG.blogDebug("Failed to find mate of " + mate + "to instnum for " + prefab.name);
+                                DBG.blogDebug("Failed to find mate of " + mate + "to instnum for " + prefab.name);
                             }
                         }
 
