@@ -206,45 +206,49 @@ namespace AllTameable.CLLC
         public static class InterceptGrowup
         {
 
-            private static GameObject OnGrowup(GameObject child, Growup growup)
+            private static GameObject OnGrowup(GameObject adult, Growup growup)
             {
-                DBG.blogDebug("inOnGrowup");
-                DBG.blogDebug("child="+ child.name);
+                //DBG.blogDebug("inOnGrowup");
+                DBG.blogDebug("adult="+ adult.name);
                 if (!Plugin.UseCLLC)
                 {
-                    return child;
+                    return adult;
                 }
-                Character childchar = child.GetComponent<Character>();
+                Character adultchar = adult.GetComponent<Character>();
                 Character growchar = growup.gameObject.GetComponent<Character>();
-                if (!(bool)childchar)
+                if (!(bool)adultchar)
                 {
-                    DBG.blogWarning("Growup, No Child");
-                    return child;
+                    DBG.blogWarning("Growup, No Adult");
+                    return adult;
                 }
                 else if (!(bool)growchar)
                 {
                     DBG.blogWarning("No Growup, setting tame and level manually");
-                    childchar.SetTamed(true);
-                    childchar.SetLevel(1);
-                    return child;
+                    adultchar.SetTamed(true);
+                    adultchar.SetLevel(1);
+                    return adult;
                 }
 
                 //DBG.blogDebug("Both child and growup valid, inheriting tame and level");
-                childchar.SetTamed(growchar.IsTamed());
-                childchar.SetLevel(growchar.GetLevel());
+                adultchar.SetTamed(growchar.IsTamed());
+                adultchar.SetLevel(growchar.GetLevel());
                 try
                 {
                     DBG.blogDebug("Attempting custom Growup");
-
-                    ProcreationInfo procinfo = childchar.gameObject.AddComponent<ProcreationInfo>();
+                    if (!growchar.gameObject.TryGetComponent<ProcreationInfo>(out var procinfo))
+                    {
+                        //DBG.blogDebug("Adding Procinfo to Growup");
+                        procinfo = growchar.gameObject.AddComponent<ProcreationInfo>();
+                    }
+                    //ProcreationInfo procinfo = adultchar.gameObject.AddComponent<ProcreationInfo>();
                     //throw new Exception("Try to duplicate");
-                    procinfo.SetGrow(growchar);
+                    procinfo.SetGrow(adultchar);
                 }
                 catch
                 {
                     DBG.blogWarning("Failed Custom Growup");
                 }
-                return child;
+                return adult;
             }
 
             private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)

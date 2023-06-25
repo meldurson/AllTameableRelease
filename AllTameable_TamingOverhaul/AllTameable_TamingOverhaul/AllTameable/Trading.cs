@@ -10,7 +10,7 @@ using UnityEngine;
 
 namespace AllTameable.Trading
 {
-    public class Trading : BaseUnityPlugin
+    public class Trading// : BaseUnityPlugin
     {
         //private static ZNetScene zns;
 

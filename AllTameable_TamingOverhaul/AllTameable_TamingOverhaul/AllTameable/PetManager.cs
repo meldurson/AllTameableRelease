@@ -64,7 +64,7 @@ namespace AllTameable
                 }
                 else
                 {
-                    DBG.blogDebug("Failed to Post added " + (tot - succ) + "/" + tot);
+                    DBG.blogWarning("Failed to Post added " + (tot - succ) + "/" + tot);
                 }
             }
             List<string> LateSetMini = new List<string>(Plugin.PostMakeList);
@@ -494,7 +494,9 @@ namespace AllTameable
 
 
 
-                component.m_sootheEffect = wtame.m_sootheEffect;
+                component.m_sootheEffect = component.m_petEffect;
+                //component.m_sootheEffect = wtame.m_sootheEffect;
+                component.m_tamedEffect = wtame.m_tamedEffect;
                 component.m_commandable = tb.commandable;
                 if (tb.commandable)
                 {
@@ -543,6 +545,12 @@ namespace AllTameable
                 }
                 else { DBG.blogInfo("Cannot be tamed by food"); }
 
+
+                if (Plugin.CheckHuman(go))
+                {
+                    DBG.blogDebug("isHuman: Procreation=" + tb.procretion);
+                }
+
                 if (tb.procretion)
                 {
                     //DBG.blogDebug("has procreation");
@@ -557,8 +565,14 @@ namespace AllTameable
                     if (component3.m_pregnancyChance > 1) { component3.m_pregnancyChance *= 0.01f; }
                     if (component3.m_pregnancyChance > 1) { component3.m_pregnancyChance =0.66f; }
                     component3.m_pregnancyDuration = tb.pregnancyDuration;
-                    component3.m_partnerCheckRange = 5f * tb.size;
+                    //if (component3.m_updateInterval < 20) { component3.m_updateInterval = 20; }
+                    component3.m_updateInterval = 6;
+                    component3.m_partnerCheckRange = 4f * tb.size;
                     component3.m_totalCheckRange = 10f * tb.size;
+
+                    
+
+
                     if (flag && component3.m_offspring != null && !Plugin.CheckHuman(go) && !tb.procretionOverwrite)
                     {
                         Growup component4 = component3.m_offspring.GetComponent<Growup>();
@@ -670,7 +684,11 @@ namespace AllTameable
             }
             string NamePrefix;
             if (!isHuman) { NamePrefix = "Mini"; }
-            else { NamePrefix = "Child"; }
+            else 
+            { 
+                NamePrefix = "Child";
+                DBG.blogDebug("Child is :"+ NamePrefix + text );
+            }
 
             gameObject.name = "Mini" + text;
             //DBG.blogDebug(gameObject.name);

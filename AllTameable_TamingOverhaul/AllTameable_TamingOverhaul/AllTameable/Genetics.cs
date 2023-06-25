@@ -13,7 +13,7 @@ using System;
 
 namespace AllTameable.Genetics
 {
-    public class Genetics : BaseUnityPlugin
+    public class Genetics// : BaseUnityPlugin
     {
         //private static ZNetScene zns;
 
@@ -144,17 +144,18 @@ namespace AllTameable.Genetics
 
         private static void PrefixProcreationAwake(Procreation __instance)
         {
+            //DBG.blogDebug("Procreation Awake, " + __instance.name);
             string prefname = __instance.name.Replace("(Clone)", "");
             if (Plugin.cfgList.TryGetValue(prefname, out Plugin.TameTable tmtbl))
             {
-                DBG.blogDebug("Proc Awake, " + prefname);
+                //DBG.blogDebug("Proc Awake, " + prefname);
                 if ((tmtbl.specificOffspringString + "") != "")
                 {
                     //DBG.blogDebug("specificOffspringString=" + cfgfile.specificOffspringString);
                     if (tmtbl.ListofRandomOffspring.Count() == 0 | !Plugin.CompatMatesList.ContainsKey(prefname))
                     {
                         List<string> prefnames = new List<string>();
-                        DBG.blogDebug("tmtbl.specificOffspringString=" + tmtbl.specificOffspringString);
+                        DBG.blogDebug("Proc Awake, " + prefname+":  tmtbl.specificOffspringString=" + tmtbl.specificOffspringString);
                         string[] partners = tmtbl.specificOffspringString.Split(',');
                         partners = partners.Skip(1).ToArray();
                         foreach (string combinedValue in partners)
@@ -184,7 +185,7 @@ namespace AllTameable.Genetics
                         }
 
                     }
-                    DBG.blogDebug("Plugin.CompatMatesList[prefname]=" + String.Join(",", Plugin.CompatMatesList[prefname]));
+                    //DBG.blogDebug("Plugin.CompatMatesList[prefname]=" + String.Join(",", Plugin.CompatMatesList[prefname]));
 
                 }
             }
@@ -368,12 +369,18 @@ namespace AllTameable.Genetics
             }
             List<string> clonemates = new List<string>();
             ZNetScene zns = ZNetScene.instance;
-            clonemates.Add(baseAI.gameObject.name);
+            if (cfgList.TryGetValue(baseAI.gameObject.name.Replace("(Clone)", ""), out TameTable cfgfile))
+            {
+                if (cfgfile.canMateWithSelf)
+                {
+                    clonemates.Add(baseAI.gameObject.name);
+                }
+            }
             foreach (string str in possiblemates)
             {
                 clonemates.Add(str + "(Clone)");
             }
-            // DBG.blogDebug("clonemates= " + string.Join(":", clonemates));
+            DBG.blogDebug("Possible mates= " + string.Join(":", clonemates));
 
             foreach (Character character in characters)
             {
@@ -484,6 +491,12 @@ namespace AllTameable.Genetics
                                 int added = 0;
                                 try
                                 {
+                                    //DBG.blogDebug("Attempting to add " + mate);
+                                    //try { DBG.blogDebug("zns.GetPrefab(mate): = " + zns.GetPrefab(mate)); } catch { }
+                                    //try { DBG.blogDebug("center: = " + center); } catch { }
+                                    //try { DBG.blogDebug("maxRange: = " + maxRange); } catch { }
+                                    //try { DBG.blogDebug("eventCreaturesOnly: = " + eventCreaturesOnly); } catch { }
+                                    //try { DBG.blogDebug("procreationOnly: = " + procreationOnly); } catch { }
                                     added = Safe_GetNrOfInstances(zns.GetPrefab(mate), center, maxRange, false, eventCreaturesOnly, procreationOnly);
                                 }
                                 catch
@@ -499,13 +512,12 @@ namespace AllTameable.Genetics
                             }
                             else
                             {
-                                DBG.blogDebug("Failed to find mate of " + mate + "to instnum for " + prefab.name);
+                                //DBG.blogDebug("Failed to find mate of " + mate + "to instnum for " + prefab.name);
                             }
                         }
 
                     }
-                }
-                catch { DBG.blogDebug("Error in finding mate for " + prefab.name); }
+                } catch { DBG.blogDebug("Error in finding mate for " + prefab.name); }
             }
             __result = sum;
             return;

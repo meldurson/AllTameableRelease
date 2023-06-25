@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using System.Collections;
 using System.Globalization;
 using System.Reflection;
+using System.Text.RegularExpressions;
 
 namespace AllTameable
 {
@@ -46,10 +47,87 @@ namespace AllTameable
             DBG.blogDebug(tempstr);
 
         }
-        public static void create_TamelistCFG()
+        public static bool create_TamelistCFG()
         {
+            string[] matches = Directory.GetFiles(@Path.GetDirectoryName(Paths.BepInExConfigPath), "AllTameable_TameList*.cfg");
+            if (matches.Count() > 0)
+            {
+                DBG.blogWarning("There are already AllTameable_TameList in your config folder, check to make sure they are formatted correctly");
+                DBG.blogWarning("The files are:");
+                foreach (string match in matches)
+                {
+                    DBG.blogWarning(match);
+                }
+
+                return false;
+            }
+            string cfgpath = Plugin.cfgPath;
+            //DBG.blogDebug("cfgpath="+ cfgpath);
+            StreamReader streamreader = new StreamReader(cfgpath);
+            string sline;
+            bool found_setting = false;
+            string[] arr = new string[0];
+            DBG.blogDebug("attempt to read meldurson.valheim.AllTameable");
+            while ((sline = streamreader.ReadLine()) != null && !found_setting)
+            {
+                sline = sline.Trim();
+                if (!sline.StartsWith("Settings"))
+                {
+                    //DBG.blogDebug("sline="+sline);
+                    continue;
+                }
+                sline = sline.Replace("TRUE", "true").Replace("FALSE", "false").Replace(" ", "");
+                arr = sline.Split('=')[1].Split(';');
+                found_setting = true;
+            }
+
+            if (arr.Count() > 0)
+            {
+                string createfile_path = Path.Combine(@Path.GetDirectoryName(Paths.BepInExConfigPath), Path.GetFileName("AllTameable_TameList_From_Config.cfg"));
+                DBG.blogDebug("createfile_path=" + createfile_path);
+                foreach (string text in arr)
+                {
+                    DBG.blogDebug("entry=" + text);
+                }
+                using (StreamWriter sw = File.AppendText(createfile_path))
+                {
+                    foreach (string text in arr)
+                    {
+                        sw.WriteLine(text);
+                    }
+                }
+            }
+            else
+            {
+                string createfile_path = Path.Combine(@Path.GetDirectoryName(Paths.BepInExConfigPath), Path.GetFileName("AllTameable_TameList_From_Default.cfg"));
+                DBG.blogDebug("createfile_path=" + createfile_path);
+                DBG.blogDebug("Did not find Setting in config, creating from default");
+                ;
+                using (StreamWriter sw = File.CreateText(createfile_path))
+                {
+                    sw.Write(loadDefaultConfig());
+                }
+            }
+
+            return true;
+        }
+
+        private static string loadDefaultConfig()
+        {
+            var assembly = Assembly.GetExecutingAssembly();
+            string resourceName = assembly.GetManifestResourceNames().Single(str => str.EndsWith("defaultTamelist.txt"));
+            string result = "";
+            using (Stream stream = assembly.GetManifestResourceStream(resourceName))
+            using (StreamReader reader = new StreamReader(stream))
+            {
+                result = reader.ReadToEnd();
+            }
+            DBG.blogDebug("result=" + result);
+            return result;
+
 
         }
+           
         private static void readTamelist(string path)
         {
             StreamReader streamreader = new StreamReader(path);
@@ -63,8 +141,8 @@ namespace AllTameable
                 }
                 sline = sline.Replace("TRUE", "true").Replace("FALSE", "false").Replace(";", "").Replace(" ", "");
                 string[] arr = sline.Split(',');
-                //try
-                //{
+                try
+                {
                     Plugin.TameTable temptbl = ArrToTametable(arr);
                     //DBG.blogDebug("gotoutofarrtotmtbl");
                     if (arr[0].StartsWith("*"))
@@ -79,20 +157,26 @@ namespace AllTameable
                         
                         if (prefablist.Count() > 1)
                         {
-                        DBG.blogDebug("prefablist=" + string.Join(",", prefablist));
-                        //DBG.blogDebug("Count >0: "+ arr[0]);
-                        Plugin.rawMatesList.Add(arr[0]);
+                            DBG.blogDebug("prefablist=" + string.Join(",", prefablist));
+                            //DBG.blogDebug("Count >0: "+ arr[0]);
+                            Plugin.rawMatesList.Add(arr[0]);
 
-                            SetCompatMates(prefablist);
-
-                            for (int i = 0; i < prefablist.Count(); i++)
+                                SetCompatMates(prefablist);
+                            if (arr.Count() > 1)
                             {
-                                if (!cfgList2.ContainsKey(prefablist[i]))
+                                for (int i = 0; i < prefablist.Count(); i++)
                                 {
-                                    cfgList2.Add(prefablist[i], tbl_toAdd);
-                                    print_tmtbl(prefablist[i], tbl_toAdd);
-                                    DBG.blogInfo("succesfully added " + prefablist[i] + " with mates " + string.Join(", ", prefablist));
+                                    if (!cfgList2.ContainsKey(prefablist[i]))
+                                    {
+                                        cfgList2.Add(prefablist[i], tbl_toAdd);
+                                        print_tmtbl(prefablist[i], tbl_toAdd);
+                                        DBG.blogInfo("succesfully added " + prefablist[i] + " with mates " + string.Join(", ", prefablist));
+                                    }
                                 }
+                            }
+                            else
+                            {
+                                DBG.blogDebug("Skipping tame, added mates");
                             }
                         }
                         else
@@ -110,11 +194,11 @@ namespace AllTameable
                         }
 
                     }
-                //}
-                //catch
-                //{
-                //    DBG.blogWarning("Failed to add tametablecfg for " + arr[0]);
-                //}
+                }
+                catch
+                {
+                    DBG.blogWarning("Failed to add tametablecfg for " + arr[0]);
+                }
 
                 /*
                 foreach (KeyValuePair<string, Plugin.TameTable> item in cfgList2)

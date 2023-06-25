@@ -28,20 +28,20 @@ namespace AllTameable
         public class TameTable : ICloneable //All the info that can be changed for a creature
         {
             public bool commandable { get; set; } = true;
-            public float tamingTime { get; set; } = 600f;
-            public float fedDuration { get; set; } = 300f;
+            public float tamingTime { get; set; } = 1800f;
+            public float fedDuration { get; set; } = 600f;
             public float consumeRange { get; set; } = 2f;
-            public float consumeSearchInterval { get; set; } = 5f;
-            public float consumeHeal { get; set; } = 10f;
-            public float consumeSearchRange { get; set; } = 30f;
+            public float consumeSearchInterval { get; set; } = 10f;
+            public float consumeHeal { get; set; } = 30f;
+            public float consumeSearchRange { get; set; } = 10f;
             public string consumeItems { get; set; } = "RawMeat";
-            public bool changeFaction { get; set; } = true;
+            public bool changeFaction { get; set; } = false;
             public bool procretion { get; set; } = true;
             public bool procretionOverwrite { get; set; } = false;
             public int maxCreatures { get; set; } = 5;
             public float pregnancyChance { get; set; } = 0.33f;
-            public float pregnancyDuration { get; set; } = 10f;
-            public float growTime { get; set; } = 60f;
+            public float pregnancyDuration { get; set; } = 60f;
+            public float growTime { get; set; } = 3000f;
 
             //custom features
             public bool canMateWithSelf { get; set; } = true;
@@ -196,7 +196,7 @@ namespace AllTameable
                     DBG.blogDebug("Copying Creature Prefabs for Procreation");
                     if (cfgList.Count() < 1)
                     {
-                        if (TameListCfg.Init() == false) { initCfg(); }
+                        if (TameListCfg.Init() == false) { DBG.blogWarning("Failed second attempt at setting the tamelist, all tames may not work"); }
                     }
                     if (!PetManager.isInit)
                     {
@@ -209,6 +209,7 @@ namespace AllTameable
 
         public static int Safe_GetNrOfInstances(GameObject prefab, Vector3 center, float maxRange, bool isError, bool eventCreaturesOnly = false, bool procreationOnly = false)
         {
+            
             if (isError)
             {
                 DBG.blogWarning("****Failed Default Number of Instances****");
@@ -226,11 +227,14 @@ namespace AllTameable
 
 
             }
+            //DBG.blogDebug("GetNum Prefab is null= " + !(prefab ?? false));
+            //isError = true;
             string text = prefab.name + "(Clone)";
             if (prefab.GetComponent<BaseAI>() != null)
             {
-
-                List<BaseAI> allInstances = BaseAI.GetAllInstances();
+                //try { DBG.blogDebug("prefab.name: = " + prefab.name); } catch { }
+                //DBG.blogDebug("Prefab is null= " + !(prefab ?? false));
+                List<BaseAI> allInstances = BaseAI.Instances;
                 int num = 0;
                 if (isError)
                 {
@@ -470,7 +474,7 @@ namespace AllTameable
 
         public static bool TameUpdate = false;
 
-
+        public static string cfgPath;
 
         public static PetManager petManager;
 
@@ -493,10 +497,11 @@ namespace AllTameable
             HatchingTime = base.Config.Bind("2DragonEgg", "hatching time", 300, new ConfigDescription("how long will egg become a drake", null, new ConfigurationManagerAttributes { IsAdminOnly = true }));
             //HatchingTimeSync = base.Config.Bind("2DragonEgg", "hatching time Server", 300,new ConfigDescription("how long will egg become a drake", null,new ConfigurationManagerAttributes { IsAdminOnly = true }));
             HatchingEgg = base.Config.Bind("2DragonEgg", "enable egg hatching", defaultValue: true, new ConfigDescription("this alse enable tamed drake spawn eggs", null, new ConfigurationManagerAttributes { IsAdminOnly = true }));
-            cfg = base.Config.Bind("1General", "Settings", "Hatchling,true,600,300,30,10,300,10,RawMeat,true,true,5,0.33,10,300"
-                , "name,commandable,tamingTime,fedDuration,consumeRange,consumeSearchInterval,consumeHeal,consumeSearchRange,consumeItem:consumeItem,changeFaction,procretion,maxCreatures,pregnancyChance,pregnancyDuration,growTime,;next one;...;last one");
+            //cfg = base.Config.Bind("1General", "Settings", ""
+            //    , "OBSOLETE, CHANGING WILL NOT DO ANYTHING: name,commandable,tamingTime,fedDuration,consumeRange,consumeSearchInterval,consumeHeal,consumeSearchRange,consumeItem:consumeItem,changeFaction,procretion,maxCreatures,pregnancyChance,pregnancyDuration,growTime,;next one;...;last one");
             useTamingTool = base.Config.Bind("1General", "useTamingTool", defaultValue: true, "Use a taming tool to have an overlay when hovering over a creature");
-            UseSimple = base.Config.Bind("1General", "useSimpleFeatures", defaultValue: false, "Choose whether to reduce the features to only allow for the taming of extra creatures although no complex procreation behavior");
+            UseSimple = base.Config.Bind("1General", "useSimpleFeatures", defaultValue: false,
+                new ConfigDescription("Choose whether to reduce the features to only allow for the taming of extra creatures although no complex procreation behavior", null, new ConfigurationManagerAttributes { IsAdminOnly = true }));
             debugout = base.Config.Bind("1General", "Debug Output", defaultValue: false, "Determines if debug is output to bepinex log");
             UseCLLC_Config = base.Config.Bind("2DragonEgg", "Use CLLC Level", defaultValue: true,
                 new ConfigDescription("Determines if you want to attempt to use CLLC to determine the level of your hatchling", null, new ConfigurationManagerAttributes { IsAdminOnly = true }));
@@ -515,13 +520,18 @@ namespace AllTameable
             TamedFedMultiplier = base.Config.Bind("1General", "TamedFedMultiplier", defaultValue: 1f,
                 new ConfigDescription("Determines if after being tamed how much longer the creature will stay fed", null, new ConfigurationManagerAttributes { IsAdminOnly = true }));
 
-
             is_Basic = UseSimple.Value;
             listloaded = TameListCfg.Init();
             if (!listloaded)
             {
                 DBG.blogWarning("No Tamelist Config found, using default config for creature tames");
-                loaded = initCfg();
+                DBG.blogWarning("Tamelist is required as of version 1.1.5");
+                DBG.blogWarning("Attempting to create Tamelist from config file");
+                cfgPath = base.Config.ConfigFilePath;
+                DBG.blogDebug("cfgPath="+ cfgPath);
+                TameListCfg.create_TamelistCFG();
+                loaded = TameListCfg.Init();
+                //loaded = initCfg();
             }
             else
             {
@@ -591,7 +601,7 @@ namespace AllTameable
 
         private ZPackage SendInitialConfig()
         {
-            DBG.blogDebug("Client received RPC");
+            DBG.blogDebug("Sent Client RPC");
             RPC.CfgPackage cfgPackage = new RPC.CfgPackage();
             return cfgPackage.PackTamelist();
         }
@@ -605,22 +615,38 @@ namespace AllTameable
             yield return null;
             RPC.CfgPackage.Unpack(package);
             PetManager.UpdatesFromServer();
+            DBG.blogDebug("!UseSimple.Value="+ !UseSimple.Value + ", is_Basic="+ is_Basic);
+            if (!UseSimple.Value && is_Basic)
+            {
+                DBG.blogDebug("Server has complex procreation, patching Genetics and Trading");
+                PerformNonBasicPatches();
+            }
 
         }
 
 
 
-
-
-            public static bool CheckHuman(GameObject go)
+        public static bool CheckHuman(GameObject go)
         {
-            try
+            try{return RRRCoreTameable.RRRCoreTameable.CheckHuman(go);}
+            catch {return false;}
+        }
+
+        public void PerformNonBasicPatches()
+        {
+            var harmony = new Harmony("meldurson.valheim.AllTameable");
+            harmony.PatchAll(typeof(global::AllTameable.Genetics.Genetics));
+            DBG.blogDebug("Patched Genetics");
+            harmony.PatchAll(typeof(global::AllTameable.Trading.Trading));
+            DBG.blogDebug("Patched Trading");
+            if (UseCLLC)
             {
-                return RRRCoreTameable.RRRCoreTameable.CheckHuman(go);
-            }
-            catch
-            {
-                return false;
+                harmony.PatchAll(typeof(global::AllTameable.CLLC.CLLCPatches));
+                DBG.blogDebug("Patched CLLCPatches");
+                harmony.PatchAll(typeof(global::AllTameable.CLLC.CLLCPatches.InterceptProcreation));
+                DBG.blogDebug("Patched InterceptProcreation");
+                harmony.PatchAll(typeof(global::AllTameable.CLLC.CLLCPatches.InterceptGrowup));
+                DBG.blogDebug("Patched InterceptProcreation");
             }
         }
 
@@ -633,7 +659,7 @@ namespace AllTameable
             {
                 DBG.blogInfo("Patching RRRCore");
                 //harmony.PatchAll(Assembly.GetExecutingAssembly());
-                harmony.PatchAll(typeof(global::RRRCoreTameable.RRRCoreTameable));
+                harmony.PatchAll(typeof(global::AllTameable.RRRCoreTameable.RRRCoreTameable));
             }
 
             
@@ -643,19 +669,7 @@ namespace AllTameable
             DBG.blogDebug("Patched Plugin");
             if (!is_Basic)
             {
-                harmony.PatchAll(typeof(global::AllTameable.Genetics.Genetics));
-                DBG.blogDebug("Patched Genetics");
-                harmony.PatchAll(typeof(global::AllTameable.Trading.Trading));
-                DBG.blogDebug("Patched Trading");
-                if (UseCLLC)
-                {
-                    harmony.PatchAll(typeof(global::AllTameable.CLLC.CLLCPatches));
-                    DBG.blogDebug("Patched CLLCPatches");
-                    harmony.PatchAll(typeof(global::AllTameable.CLLC.CLLCPatches.InterceptProcreation));
-                    DBG.blogDebug("Patched InterceptProcreation");
-                    harmony.PatchAll(typeof(global::AllTameable.CLLC.CLLCPatches.InterceptGrowup));
-                    DBG.blogDebug("Patched InterceptProcreation");
-                }
+                PerformNonBasicPatches();
             }
             else
             {
@@ -688,6 +702,16 @@ namespace AllTameable
 
         }
 
+        private static void SetPlayerSpwanEffect()
+        {
+            if (!Player.m_localPlayer.m_spawnEffects.m_effectPrefabs.Contains(firework))
+            {
+                Array.Resize(ref Player.m_localPlayer.m_spawnEffects.m_effectPrefabs, 1);
+                Player.m_localPlayer.m_spawnEffects.m_effectPrefabs[0] = firework;
+            }
+        }
+
+        /*
         public void scanMethods()
         {
             DBG.blogDebug("In Scan Methods");
@@ -724,9 +748,9 @@ namespace AllTameable
                 j++;
             }
         }
-
-
-
+        */
+       
+        /*
         public bool initCfg()
         {
             if (cfg.Value == "")
@@ -811,15 +835,9 @@ namespace AllTameable
 
             return true;
         }
+        */
 
-        private static void SetPlayerSpwanEffect()
-        {
-            if (!Player.m_localPlayer.m_spawnEffects.m_effectPrefabs.Contains(firework))
-            {
-                Array.Resize(ref Player.m_localPlayer.m_spawnEffects.m_effectPrefabs, 1);
-                Player.m_localPlayer.m_spawnEffects.m_effectPrefabs[0] = firework;
-            }
-        }
+
 
     }
 }

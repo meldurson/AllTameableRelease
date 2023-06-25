@@ -64,10 +64,12 @@
     <Reference Include="Jotunn">
       <HintPath>..\Libs\Jotunn.dll</HintPath>
     </Reference>
-    <Reference Include="RRRCore">
+    <Reference Include="RRRCore, Version=0.2.15.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Libs\RRRCore.dll</HintPath>
     </Reference>
-    <Reference Include="RRRNpcs">
+    <Reference Include="RRRNpcs, Version=0.2.4.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Libs\RRRNpcs.dll</HintPath>
     </Reference>
     <Reference Include="System" />
@@ -132,6 +134,9 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="Assets\taming_tool" />
     <None Include="Assets\tameablelist.json" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Assets\defaultTamelist.txt" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

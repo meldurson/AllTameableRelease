@@ -3,7 +3,7 @@ using RRRCore.prefabs._0_2_0;
 using UnityEngine;
 using HarmonyLib;
 using RRRNpcs;
-namespace RRRCoreTameable
+namespace AllTameable.RRRCoreTameable
 {
     internal class RRRCoreTameable
     {/*
@@ -69,70 +69,44 @@ namespace RRRCoreTameable
 
         [HarmonyPrefix]
         [HarmonyPatch(typeof(RRRMobCustomization), "SetupTameable")]
-        //private static class Prefix_SetupTameable
-        //{
-
-            private static bool Prefix(ref RRRMobCustomization __instance)
+        private static bool Prefix(ref RRRMobCustomization __instance)
+        {
+            GameObject go = __instance.gameObject;
+            if (go.GetComponent<Tameable>() != null)
             {
-                GameObject go = __instance.gameObject;
-                if (go.GetComponent<Growup>() != null)
-                {
-                    //DBG.blogDebug("isChild, not adding tameable");
-                    return false;
-                }
-                return true;
+                DBG.blogDebug("RRRCore atempting to add Tameable for "+go.name+" although already added, skipping RRR Setup");
+                return false;
             }
-        //}
+            if (go.GetComponent<Growup>() != null)
+            {
+                DBG.blogDebug("isChild, not adding tameable");
+                return false;
+            }
+            return true;
+        }
+
 
         [HarmonyPrefix]
         [HarmonyPatch(typeof(RRRMobCustomization), "Start")]
-        //private static class Prefix_Start
-        //{
 
-            private static void Prefix(ref RRRMobCustomization __instance, ref bool __state)
-            {
-                __state = false;
-                //DBG.blogDebug("in Start");
-                //try { DBG.blogDebug("mobDataNotNull=" + __instance.mobData.IsNotNull()); } catch { }
-                //try { DBG.blogDebug("CatSpecialNotNull=" + __instance.mobData.Category_Special.IsNotNull()); } catch { }
-                if (__instance.mobData.IsNotNull() && __instance.mobData.Category_Special.IsNotNull())
-                {
-                    if (!__instance.monsterAI.IsNotNull())
-                    {
-                        __instance.monsterAI = new MonsterAI();
-                        //DBG.blogDebug("Creating Temp MonsterAI");
-                        //__state = true;
-                    }
-                }
-            }
-            /*
-            private static void Postfix(ref RRRMobCustomization __instance, ref bool __state)
-            {
-                if (__state)
-                {
-                    if (!__instance.monsterAI.IsNotNull())
-                    {
-                        Object.DestroyImmediate(__instance.monsterAI);
-                        DBG.blogDebug("Destroyning MonsterAI");
-                    }
-                }
-            }
-            */
-        //}
-
-        public static bool FoundRRRCore()
+        private static void Prefix(ref RRRMobCustomization __instance, ref bool __state)
         {
-            try
+            __state = false;
+            //DBG.blogDebug("in Start");
+            //try { DBG.blogDebug("mobDataNotNull=" + __instance.mobData.IsNotNull()); } catch { }
+            //try { DBG.blogDebug("CatSpecialNotNull=" + __instance.mobData.Category_Special.IsNotNull()); } catch { }
+            if (__instance.mobData.IsNotNull() && __instance.mobData.Category_Special.IsNotNull())
             {
-                if (RRRCore.Util.DoesPluginExist("com.alexanderstrada.rrrcore"))
+                if (!__instance.monsterAI.IsNotNull())
                 {
-                    return true;
+                    __instance.monsterAI = new MonsterAI();
+                    //DBG.blogDebug("Creating Temp MonsterAI");
+                    //__state = true;
                 }
             }
-            catch { }
-            return false;
         }
-            public static bool CheckHuman(GameObject go)
+
+        public static bool CheckHuman(GameObject go)
         {
             try
             {
