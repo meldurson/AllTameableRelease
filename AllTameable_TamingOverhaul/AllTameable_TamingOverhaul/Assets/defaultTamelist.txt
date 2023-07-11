@@ -36,7 +36,7 @@
 
 *Default,true,900,150,2,10,30,20,Raspberry:Blueberries:Carrot:Turnip:Mushroom:Cloudberry:OnionSoup:Onion,false,true,10,0.66,150,300
 Boar
-*Tier_1,true,900,150,2,10,30,20,Raspberry:Blueberries:Carrot:Turnip:Mushroom:Cloudberry:OnionSoup:Onion,false,true,10,0.66,150,300
+*Tier_1,true,900,600,2,10,30,20,Raspberry:Blueberries:Carrot:Turnip:Mushroom:Cloudberry:OnionSoup:Onion,false,true,10,0.66,150,300
 Deer
 Greyling,consumeItems=SerpentMeatCooked:NeckTailGrilled:CookedMeat:CookedLoxMeat:Bread:Raspberry:Blueberries:Carrot:Turnip:Mushroom:Cloudberry:Honey:Mushroom:MushroomYellow:MushroomBlue:MinceMeatSauce:DeerStew:CookedDeerMeat:BoarJerky:BlackSoup:WolfMeatSkewer:WolfJerky:CookedWolfMeat:OnionSoup:Onion:CookedHareMeat
 Neck,consumeItems=SerpentMeat:FishRaw:Bread:Raspberry:Blueberries:Cloudberry:Carrot:Mushroom:MushroomYellow:MushroomBlue:Turnip
@@ -49,8 +49,8 @@ Surtling,consumeItems=Coal:ElderBark
 *Tier_3,true,1600,60,2,10,30,20,SerpentMeat:RawMeat:NeckTail:FishRaw:LoxMeat:DeerMeat:WolfMeat:HareMeat,false,true,10,0.66,150,450
 Blob
 Draugr
-Skeleton_Poison
 Skeleton_Poison:Skeleton
+Skeleton_Poison
 Ghost
 Greydwarf_Shaman,consumeItems=SerpentMeatCooked:NeckTailGrilled:CookedMeat:CookedLoxMeat:Bread:Raspberry:Blueberries:Carrot:Turnip:Mushroom:Cloudberry:Honey:Mushroom:MushroomYellow:MushroomBlue:MinceMeatSauce:DeerStew:CookedDeerMeat:BoarJerky:BlackSoup:WolfMeatSkewer:WolfJerky:CookedWolfMeat:OnionSoup:Onion:CookedHareMeat
 Leech,consumeItems=Bloodbag:SerpentMeat:RawMeat:NeckTail:FishRaw:LoxMeat:DeerMeat:WolfMeat:HareMeat
@@ -111,6 +111,3 @@ Bonemass,-1
 Dragon,-1
 #GoblinKing,true,2300,36,5,10,30,30,CookedMeat:CookedLoxMeat:Sausages:NeckTailGrilled:SerpentMeatCooked:FishCooked:Bread:CookedDeerMeat:BoarJerky:WolfJerky:CookedWolfMeat:CookedHareMeat,true,false,4,0.66,200,800
 GoblinKing,-1
-
-
-

@@ -494,8 +494,8 @@ namespace AllTameable
 
 
 
-                component.m_sootheEffect = component.m_petEffect;
-                //component.m_sootheEffect = wtame.m_sootheEffect;
+                //component.m_sootheEffect = component.m_petEffect;
+                component.m_sootheEffect = wtame.m_sootheEffect;
                 component.m_tamedEffect = wtame.m_tamedEffect;
                 component.m_commandable = tb.commandable;
                 if (tb.commandable)

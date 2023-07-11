@@ -162,32 +162,36 @@ namespace AllTameable.Genetics
                         {
                             prefnames.Add(combinedValue.Split('(')[0]);
                         }
-                        if (Plugin.CompatMatesList.ContainsKey(prefname))
-                        {
-                            foreach (string mate in prefnames)
-                            {
-                                if (!Plugin.CompatMatesList[prefname].Contains(mate))
-                                {
-                                    Plugin.CompatMatesList[prefname].Add(mate);
-                                    DBG.blogDebug("added mate=" + mate);
-                                }
-                                else
-                                {
-                                    DBG.blogDebug("Already added mate=" + mate);
-                                }
-                                
-                            }
-                        }
-                        else
-                        {
-                            Plugin.CompatMatesList.Add(prefname, prefnames);
-                            DBG.blogDebug("added mates=" + String.Join(",", prefnames));
-                        }
-
+                        CheckAddMate(prefname, prefnames);
                     }
                     //DBG.blogDebug("Plugin.CompatMatesList[prefname]=" + String.Join(",", Plugin.CompatMatesList[prefname]));
 
                 }
+            }
+        }
+
+        private static void CheckAddMate(string thisname, List<string> matenames)
+        {
+            if (Plugin.CompatMatesList.ContainsKey(thisname))
+            {
+                foreach (string mate in matenames)
+                {
+                    if (!Plugin.CompatMatesList[thisname].Contains(mate))
+                    {
+                        Plugin.CompatMatesList[thisname].Add(mate);
+                        DBG.blogDebug("added mate=" + mate);
+                    }
+                    else
+                    {
+                        DBG.blogDebug("Already added mate=" + mate);
+                    }
+
+                }
+            }
+            else
+            {
+                Plugin.CompatMatesList.Add(thisname, matenames);
+                DBG.blogDebug("added mates=" + String.Join(",", matenames));
             }
         }
 
@@ -479,8 +483,8 @@ namespace AllTameable.Genetics
                             {
                                 int previous_sum = sum - 1;
                                 sum = 1;
-                                //DBG.blogDebug("Cannot Mate with same prefab, " + previous_sum + " removed from total nearby, " +
-                                //    "newsum ="+ sum);
+                                DBG.blogDebug("Cannot Mate with same prefab, " + previous_sum + " removed from total nearby, " +
+                                    "newsum ="+ sum);
                             }
                         }
                         ZNetScene zns = ZNetScene.instance;

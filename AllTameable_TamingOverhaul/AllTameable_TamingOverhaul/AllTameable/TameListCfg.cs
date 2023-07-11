@@ -132,6 +132,7 @@ namespace AllTameable
         {
             StreamReader streamreader = new StreamReader(path);
             string sline;
+            defaultTable = new Plugin.TameTable();
             while ((sline = streamreader.ReadLine()) != null)
             {
                 sline = sline.Trim();
