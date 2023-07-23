@@ -14,6 +14,7 @@ namespace AllTameable
         {
             if (Plugin.useTamingTool.Value)
             {
+                
                 Player plr = Player.m_localPlayer;
                 //plr = ZNetScene.FindObjectOfType<Player>;
                 if (plr.GetCurrentWeapon().m_dropPrefab == ZNetScene.instance.GetPrefab(Plugin.tamingtoolPrefabName))
@@ -32,9 +33,9 @@ namespace AllTameable
                         {
                             if (ShowDebug(plr))
                             {
-                                taming_text += ("Prefab is: " + __instance.name +", is commandable= "+ _tm.m_commandable +"\n").Replace("(Clone)","");
+                                taming_text += ("Prefab is: " + __instance.name + ", is commandable= " + _tm.m_commandable + "\n").Replace("(Clone)", "");
                             }
-                                if (_Proc != null)
+                            if (_Proc != null)
                             {
                                 if (_Proc.IsDue())
                                 {
@@ -67,7 +68,7 @@ namespace AllTameable
                                         else
                                         {
                                             int instnum = getInstNum(_Proc)[0];
-                                            if (instnum != 0 )
+                                            if (instnum != 0)
                                             {
                                                 if (instnum == 1)
                                                 {
@@ -80,7 +81,7 @@ namespace AllTameable
 
                                             }
 
-                                            
+
                                             if (_Proc.m_pregnancyChance < 1)
                                             {
                                                 taming_text += "Ready to Procreate";
@@ -103,7 +104,7 @@ namespace AllTameable
                             {
                                 taming_text += "\nPossible Consumables: ";
                             }
-                            
+
 
                         }
                         else //not tamed
@@ -114,8 +115,8 @@ namespace AllTameable
                                 if (ATI != null)
                                 {
                                     taming_text += "Trade to Recruit";
-                                    taming_text += "\nPossible Trades: ";   
-                                    int line_len_trade = 20;
+                                    taming_text += "\nPossible Trades: ";
+                                    int line_len_trade = 20; // was 20
                                     foreach (KeyValuePair<string, int> item in ATI.tradelist)
                                     {
 
@@ -147,23 +148,32 @@ namespace AllTameable
                             {
                                 notend = false;
                             }
-                            
+
                         }
 
 
-                        int line_len = 20;
+                        int line_len = 10; //default 20
                         if (notend)
                         {
                             foreach (ItemDrop item in _mAI.m_consumeItems)
                             {
                                 taming_text = taming_text + item.name + ", ";
-                                if (taming_text.Length - line_len > 90)
+                                /*
+                                    if (taming_text.Length - line_len > 150)
                                 {
-                                    line_len = taming_text.Length;
+                                    line_len = taming_text.Length;  
                                     taming_text = taming_text + "\n";
                                 }
+                                */
+                            }
+                            foreach(string hiddenItem in Plugin.hidden_foodNames)
+                            {
+                                //DBG.blogDebug("hiddenItem=X"+hiddenItem + ", X");
+                                //DBG.blogDebug("hiddenItem. contains="+taming_text.Contains(hiddenItem + ", "));
+                                taming_text=taming_text.Replace(hiddenItem + ", ", "");
                             }
                             taming_text = taming_text.Remove(taming_text.Length - 2);
+                            //DBG.blogDebug(taming_text);
                         }
                         __result = __result + taming_text;
                     }
@@ -180,7 +190,40 @@ namespace AllTameable
                     }
 
                 }
+                
             }
+        }
+
+
+        public static float max_interact_default = 6f;
+        //public static float max_interact_recent = 6f; //implement if there is ever an issue with other interact lengths
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(Player), "FindHoverObject")] //removes healing 0 text if healing less than 0.1hp
+        private static void Prefix(Player __instance, GameObject hover, Character hoverCreature)
+        {
+            if (Plugin.useTamingTool.Value && (bool)hoverCreature)
+            {
+                //max_interact_recent = Player.m_localPlayer.m_maxInteractDistance;
+                if (__instance.GetCurrentWeapon().m_dropPrefab == ZNetScene.instance.GetPrefab(Plugin.tamingtoolPrefabName))
+                {
+                    __instance.m_maxInteractDistance = 20f;
+                }
+            }
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(Player), "FindHoverObject")] //adds effect around creature if healing
+        private static void Postfix(Player __instance, ref GameObject hover, ref Character hoverCreature)
+        {
+            __instance.m_maxInteractDistance = max_interact_default;
+
+            //if ((bool)hoverCreature) { DBG.blogDebug("char=" + hoverCreature.name); }
+            //else { DBG.blogDebug("char=null2"); }
+            /*
+            max_interact_recent = (float)Math.Round((max_interact_default + max_interact_recent) / 2, 1);
+            __instance.m_maxInteractDistance = max_interact_recent;
+            */
+
         }
 
         public static bool ShowDebug(Player plr)

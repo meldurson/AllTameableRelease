@@ -179,6 +179,23 @@ namespace AllTameable
 
                     
             }
+            DBG.blogDebug("item.name=" + item.name.Replace("(Clone)", ""));
+            if (hidden_foodNames.Contains(item.name.Replace("(Clone)", "")))
+            {
+                if(item.name.Replace("(Clone)", "") == t1foodPrefabName)
+                {
+                    __instance.DecreaseRemainingTime(45f);  
+                    DBG.blogDebug("Consumed T1Food");
+                    
+                }
+                else if(item.name.Replace("(Clone)", "") == t2foodPrefabName)
+                {
+                    __instance.DecreaseRemainingTime(90f);
+                    DBG.blogDebug("Consumed T2Food");
+                }
+                GameObject go = ZNetScene.instance.GetPrefab("fx_guardstone_permitted_add");
+                UnityEngine.Object.Instantiate(go, __instance.transform.position, __instance.transform.rotation);
+            }
 
         }
         //}
@@ -193,6 +210,7 @@ namespace AllTameable
                 DBG.blogDebug("In main Load");
                 if (ZNet.instance.IsServer())
                 {
+                    
                     DBG.blogDebug("Copying Creature Prefabs for Procreation");
                     if (cfgList.Count() < 1)
                     {
@@ -392,6 +410,8 @@ namespace AllTameable
         //{
         private static void Prefix()
         {
+            BetterTameHover.max_interact_default = Player.m_localPlayer.m_maxInteractDistance;
+            DBG.blogDebug("interact distance= " + BetterTameHover.max_interact_default);
             string playerName = Player.m_localPlayer.GetPlayerName();
             if (ThxList.Contains(playerName.ToLower()))
             {
@@ -464,6 +484,10 @@ namespace AllTameable
         public static bool PreSetMinis = true;
 
         public static String tamingtoolPrefabName = "el_TamingTool";
+        public static String t1foodPrefabName = "el_T1Food";
+        public static String t2foodPrefabName = "el_T2Food";
+
+        public static List<string> hidden_foodNames = new List<string> { t1foodPrefabName, t2foodPrefabName };
 
         public static Dictionary<string, TameTable> cfgListFailed = new Dictionary<string, TameTable>();
 

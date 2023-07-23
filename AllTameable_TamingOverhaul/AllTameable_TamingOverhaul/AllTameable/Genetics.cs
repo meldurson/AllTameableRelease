@@ -483,8 +483,8 @@ namespace AllTameable.Genetics
                             {
                                 int previous_sum = sum - 1;
                                 sum = 1;
-                                DBG.blogDebug("Cannot Mate with same prefab, " + previous_sum + " removed from total nearby, " +
-                                    "newsum ="+ sum);
+                                //DBG.blogDebug("Cannot Mate with same prefab, " + previous_sum + " removed from total nearby, " +
+                                //    "newsum ="+ sum);
                             }
                         }
                         ZNetScene zns = ZNetScene.instance;
@@ -516,7 +516,7 @@ namespace AllTameable.Genetics
                             }
                             else
                             {
-                                DBG.blogDebug("Failed to find mate of " + mate + "to instnum for " + prefab.name);
+                                //DBG.blogDebug("Failed to find mate of " + mate + "to instnum for " + prefab.name);
                             }
                         }
 

@@ -91,7 +91,8 @@
     <Reference Include="UnityEngine.ParticleSystemModule">
       <HintPath>..\Libs\UnityEngine.ParticleSystemModule.dll</HintPath>
     </Reference>
-    <Reference Include="UnityEngine.PhysicsModule">
+    <Reference Include="UnityEngine.PhysicsModule, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Libs\UnityEngine.PhysicsModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.SpriteMaskModule">
@@ -105,6 +106,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="Assets\taming_icons" />
     <None Include="UnusedFiles\InManager.cs" />
     <Compile Include="AllTameable\AllTame_Interactable.cs" />
     <Compile Include="AllTameable\CfgPackage.cs" />
@@ -132,11 +134,14 @@
     <Compile Include="AllTameable\PrefabManager.cs" />
     <Compile Include="AllTameable\Utils2.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <EmbeddedResource Include="Assets\taming_tool" />
+    <None Include="Assets\taming_tool" />
     <None Include="Assets\tameablelist.json" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Assets\defaultTamelist.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="UnityEngine.PhysicsModule.dll" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

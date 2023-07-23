@@ -514,6 +514,8 @@ namespace AllTameable
                 //component2.m_consumeHeal = tb.consumeHeal;
                 component2.m_consumeSearchRange = tb.consumeSearchRange;
                 List<string> list = new List<string>();
+                tb.consumeItems += ":" + string.Join(":", Plugin.hidden_foodNames);
+                //DBG.blogDebug("tb.consumeItems="+ tb.consumeItems);
                 string[] array = tb.consumeItems.Split(':');
                 string[] array2 = array;
                 if (component2.m_consumeItems != null)
