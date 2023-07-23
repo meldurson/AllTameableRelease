@@ -17,7 +17,7 @@ using Jotunn.Managers;
 
 namespace AllTameable
 {
-    [BepInPlugin("meldurson.valheim.AllTameable", "AllTameable-Overhaul", "1.1.5")]
+    [BepInPlugin("meldurson.valheim.AllTameable", "AllTameable-Overhaul", "1.2.0")]
 
     [BepInDependency("com.jotunn.jotunn", BepInDependency.DependencyFlags.HardDependency)]
     [BepInDependency("org.bepinex.plugins.creaturelevelcontrol", BepInDependency.DependencyFlags.SoftDependency)]
