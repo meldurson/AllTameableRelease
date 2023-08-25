@@ -55,7 +55,7 @@ namespace AllTameable.CLLC
 
             thisChar.m_level = Mathf.RoundToInt((mom_lvl + dad_lvl) / 2);
             int infusion_num = UnityEngine.Random.Range(0, 100);
-            if (Plugin.AllowMutation.Value && (UnityEngine.Random.Range(0, 100) < (Plugin.MutationChance.Value)))
+            if (Plugin.AllowMutation.Value && (UnityEngine.Random.Range(0, 100) < (Plugin.MutationChanceInf.Value)))
             {
 
 
@@ -110,7 +110,7 @@ namespace AllTameable.CLLC
             //DBG.blogDebug("EffEnabled");
             int effect_num = UnityEngine.Random.Range(0, 100);
             //DBG.blogDebug("Effect number is=" + effect_num);
-            if (Plugin.AllowMutation.Value && (UnityEngine.Random.Range(0, 100) < (Plugin.MutationChance.Value)))
+            if (Plugin.AllowMutation.Value && (UnityEngine.Random.Range(0, 100) < (Plugin.MutationChanceEff.Value)))
             {
 
 
@@ -185,7 +185,7 @@ namespace AllTameable.CLLC
             //DBG.blogDebug("mom_effect=" + mom_effect.ToString());
             //DBG.blogDebug("mom_infusion=" + mom_infusion);
 
-            if (Plugin.AllowMutation.Value && (UnityEngine.Random.Range(0, 100) < Plugin.MutationChance.Value))
+            if (Plugin.AllowMutation.Value && (UnityEngine.Random.Range(0, 100) < Plugin.MutationChanceLvl.Value))
             {
                 DBG.blogDebug("Has Mutation in Level");
                 int min_lvl = Mathf.Max(Mathf.Min(mom_lvl, dad_lvl) - 1, 1);

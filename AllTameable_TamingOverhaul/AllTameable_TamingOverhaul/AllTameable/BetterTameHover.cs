@@ -17,7 +17,12 @@ namespace AllTameable
                 
                 Player plr = Player.m_localPlayer;
                 //plr = ZNetScene.FindObjectOfType<Player>;
-                if (plr.GetCurrentWeapon().m_dropPrefab == ZNetScene.instance.GetPrefab(Plugin.tamingtoolPrefabName))
+                if (plr.GetCurrentWeapon().m_dropPrefab == null)
+                {
+                    //DBG.blogDebug("no equiped item");
+                    return;
+                }
+                if (Plugin.toolNames.Contains(plr.GetCurrentWeapon().m_dropPrefab.name))
                 {
                     Tameable _tm = __instance.GetComponentInParent<Tameable>();
                     if (_tm != null)
@@ -204,9 +209,9 @@ namespace AllTameable
             if (Plugin.useTamingTool.Value && (bool)hoverCreature)
             {
                 //max_interact_recent = Player.m_localPlayer.m_maxInteractDistance;
-                if (__instance.GetCurrentWeapon().m_dropPrefab == ZNetScene.instance.GetPrefab(Plugin.tamingtoolPrefabName))
+                if (__instance.GetCurrentWeapon().m_dropPrefab == ZNetScene.instance.GetPrefab(Plugin.advtoolPrefabName))
                 {
-                    __instance.m_maxInteractDistance = 20f;
+                    __instance.m_maxInteractDistance = Plugin.increasedInteractDistance.Value;
                 }
             }
         }

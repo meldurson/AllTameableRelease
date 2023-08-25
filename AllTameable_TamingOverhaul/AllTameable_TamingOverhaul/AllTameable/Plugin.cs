@@ -17,7 +17,7 @@ using Jotunn.Managers;
 
 namespace AllTameable
 {
-    [BepInPlugin("meldurson.valheim.AllTameable", "AllTameable-Overhaul", "1.2.0")]
+    [BepInPlugin("meldurson.valheim.AllTameable", "AllTameable-Overhaul", "1.2.2")]
 
     [BepInDependency("com.jotunn.jotunn", BepInDependency.DependencyFlags.HardDependency)]
     [BepInDependency("org.bepinex.plugins.creaturelevelcontrol", BepInDependency.DependencyFlags.SoftDependency)]
@@ -49,6 +49,7 @@ namespace AllTameable
             public List<specificMates> ListofRandomOffspring { get; set; } = new List<specificMates>();
             public float size { get; set; } = 1f;
             public bool offspringOnly { get; set; } = false;
+            public string group { get; set; } = "";
             public object Clone()
             {
                 return MemberwiseClone();
@@ -70,7 +71,7 @@ namespace AllTameable
         public class chanceOffspring : ICloneable //All the info that can be changed for a creature
         {
             public GameObject offspring { get; set; } = null;
-            public float chance { get; set; } = 0;
+            public float chance { get; set; } = 100;
             public object Clone()
             {
                 return MemberwiseClone();
@@ -142,6 +143,62 @@ namespace AllTameable
         }
         //}
 
+
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(Tameable), "IsHungry")] //checks if ever ate but close to world creation time
+
+        private static bool Postfix(bool __result, Tameable __instance)
+        {
+            //DBG.blogDebug("inPostfix");
+            if (!__result)
+            {
+                if (__instance.m_nview == null)
+                {
+                    return false;
+                }
+                ZDO zDO = __instance.m_nview.GetZDO();
+                if (zDO == null)
+                {
+                    return false;
+                }
+                if(zDO.GetLong(ZDOVars.s_tameLastFeeding, 0L) == 0)
+                {
+                    //DBG.blogDebug("No Last Feeding Time");
+                    __result = true;
+                    return true;
+                }
+                
+            }
+            return __result;
+        }
+        //}
+
+
+        public static void tryReduceTameTime(string itemName, Tameable tame)
+        {
+            if (hidden_foodNames.Contains(itemName))
+            {
+                if (itemName == t1foodPrefabName)
+                {
+                    tame.DecreaseRemainingTime(45f);
+                    DBG.blogDebug("Consumed T1Food");
+                }
+                else if (itemName == t2foodPrefabName)
+                {
+                    tame.DecreaseRemainingTime(90f);
+                    DBG.blogDebug("Consumed T2Food");
+                }
+                else if (itemName == t3foodPrefabName)
+                {
+                    tame.DecreaseRemainingTime(150f);
+                    DBG.blogDebug("Consumed T3Food");
+                }
+                GameObject go = ZNetScene.instance.GetPrefab("fx_guardstone_permitted_add");
+                UnityEngine.Object.Instantiate(go, tame.transform.position, tame.transform.rotation);
+            }
+        }
+
         [HarmonyPostfix]
         [HarmonyPatch(typeof(Tameable), "OnConsumedItem")]
         //private static class Tameable_OnConsumedItem_Patch
@@ -179,22 +236,14 @@ namespace AllTameable
 
                     
             }
-            DBG.blogDebug("item.name=" + item.name.Replace("(Clone)", ""));
-            if (hidden_foodNames.Contains(item.name.Replace("(Clone)", "")))
+
+            if (item != null)
             {
-                if(item.name.Replace("(Clone)", "") == t1foodPrefabName)
-                {
-                    __instance.DecreaseRemainingTime(45f);  
-                    DBG.blogDebug("Consumed T1Food");
-                    
-                }
-                else if(item.name.Replace("(Clone)", "") == t2foodPrefabName)
-                {
-                    __instance.DecreaseRemainingTime(90f);
-                    DBG.blogDebug("Consumed T2Food");
-                }
-                GameObject go = ZNetScene.instance.GetPrefab("fx_guardstone_permitted_add");
-                UnityEngine.Object.Instantiate(go, __instance.transform.position, __instance.transform.rotation);
+                tryReduceTameTime(item.name.Replace("(Clone)", ""), __instance);
+            }
+            else
+            {
+                DBG.blogDebug("OnConsume item is null");
             }
 
         }
@@ -326,7 +375,7 @@ namespace AllTameable
         //{
         private static void Postfix()
         {
-            DBG.blogInfo("Clearing TameLists");
+            DBG.blogInfo("Reseting TameLists");
             //prefabManager.Clear();
             //cfgList.Clear();
             cfgListFailed.Clear();
@@ -338,7 +387,12 @@ namespace AllTameable
             PostMakeList.Clear();
             PostLoadServerConfig = false;
             PreSetMinis = true;
+            loaded = false;
+            listloaded = false;
             ReceivedServerConfig = false;
+            PetManager.isInit = false;
+            PetManager.isInit2 = false;
+            LoadTamelists();
 
 
         }
@@ -419,11 +473,20 @@ namespace AllTameable
             }
           
         }
-       
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(EggGrow), "GetHoverText")]
+        //private static class Patch_Tameable_Tame
+        //{
+        private static void Postfix(EggGrow __instance, string __result) //changes the faction based on config
+        {
+            DBG.blogDebug("EggHover=" + __result);
+        }
 
 
 
-       
+
+
 
         public static ConfigEntry<int> nexusID;
 
@@ -434,6 +497,8 @@ namespace AllTameable
         public static ConfigEntry<int> HatchingTime;
 
         public static ConfigEntry<bool> useTamingTool;
+
+        public static ConfigEntry<int> increasedInteractDistance;
 
         public static ConfigEntry<bool> debugout;
 
@@ -447,7 +512,11 @@ namespace AllTameable
 
         public static ConfigEntry<bool> AllowMutation;
 
-        public static ConfigEntry<int> MutationChance;
+        public static ConfigEntry<int> MutationChanceLvl;
+
+        public static ConfigEntry<int> MutationChanceInf;
+
+        public static ConfigEntry<int> MutationChanceEff;
 
         public static ConfigEntry<bool> HealOnConsume;
 
@@ -456,6 +525,14 @@ namespace AllTameable
         public static ConfigEntry<float> TamedFedMultiplier;
 
         public static ConfigEntry<bool> UseSimple;
+
+        public static ConfigEntry<string> CommandKey;
+
+        public static ConfigEntry<string> CycleKey;
+
+        public static ConfigEntry<int> CommandRange;
+
+        public static ConfigEntry<int> DefaultCommandType;
 
         public static ManualLogSource logger;
 
@@ -468,7 +545,7 @@ namespace AllTameable
 
         public static List<string> PostMakeList = new List<string>();
 
-        public static TameTable CfgTable;
+        //public static TameTable CfgTable;
         public static bool ReceivedServerConfig = false;
         public static bool PostLoadServerConfig = false;
 
@@ -484,10 +561,13 @@ namespace AllTameable
         public static bool PreSetMinis = true;
 
         public static String tamingtoolPrefabName = "el_TamingTool";
+        public static String advtoolPrefabName = "el_AdvancedTamingTool";
         public static String t1foodPrefabName = "el_T1Food";
         public static String t2foodPrefabName = "el_T2Food";
+        public static String t3foodPrefabName = "el_T3Food";
 
-        public static List<string> hidden_foodNames = new List<string> { t1foodPrefabName, t2foodPrefabName };
+        public static List<string> hidden_foodNames = new List<string> { t1foodPrefabName, t2foodPrefabName, t3foodPrefabName };
+        public static List<string> toolNames = new List<string> { tamingtoolPrefabName, advtoolPrefabName };
 
         public static Dictionary<string, TameTable> cfgListFailed = new Dictionary<string, TameTable>();
 
@@ -518,62 +598,50 @@ namespace AllTameable
         {
             logger = base.Logger;
             nexusID = base.Config.Bind("Nexus", "NexusID", 1571, "Nexus mod ID for updates");
-            HatchingTime = base.Config.Bind("2DragonEgg", "hatching time", 300, new ConfigDescription("how long will egg become a drake", null, new ConfigurationManagerAttributes { IsAdminOnly = true }));
+            HatchingTime = base.Config.Bind("2:DragonEgg", "hatching time", 300, new ConfigDescription("how long will egg become a drake", null, new ConfigurationManagerAttributes { IsAdminOnly = true }));
             //HatchingTimeSync = base.Config.Bind("2DragonEgg", "hatching time Server", 300,new ConfigDescription("how long will egg become a drake", null,new ConfigurationManagerAttributes { IsAdminOnly = true }));
-            HatchingEgg = base.Config.Bind("2DragonEgg", "enable egg hatching", defaultValue: true, new ConfigDescription("this alse enable tamed drake spawn eggs", null, new ConfigurationManagerAttributes { IsAdminOnly = true }));
+            HatchingEgg = base.Config.Bind("2:DragonEgg", "enable egg hatching", defaultValue: true, new ConfigDescription("this alse enable tamed drake spawn eggs", null, new ConfigurationManagerAttributes { IsAdminOnly = true }));
             //cfg = base.Config.Bind("1General", "Settings", ""
             //    , "OBSOLETE, CHANGING WILL NOT DO ANYTHING: name,commandable,tamingTime,fedDuration,consumeRange,consumeSearchInterval,consumeHeal,consumeSearchRange,consumeItem:consumeItem,changeFaction,procretion,maxCreatures,pregnancyChance,pregnancyDuration,growTime,;next one;...;last one");
-            useTamingTool = base.Config.Bind("1General", "useTamingTool", defaultValue: true, "Use a taming tool to have an overlay when hovering over a creature");
-            UseSimple = base.Config.Bind("1General", "useSimpleFeatures", defaultValue: false,
+            useTamingTool = base.Config.Bind("1:General", "useTamingTool", defaultValue: true, "Use a taming tool to have an overlay when hovering over a creature");
+            increasedInteractDistance = base.Config.Bind("1:General", "Inceased Interact Distance", defaultValue: 20,
+                new ConfigDescription("When using the advanced taming stick, how far away can you interact with creatures", null, new ConfigurationManagerAttributes { IsAdminOnly = true }));
+            UseSimple = base.Config.Bind("1:General", "useSimpleFeatures", defaultValue: false,
                 new ConfigDescription("Choose whether to reduce the features to only allow for the taming of extra creatures although no complex procreation behavior", null, new ConfigurationManagerAttributes { IsAdminOnly = true }));
-            debugout = base.Config.Bind("1General", "Debug Output", defaultValue: false, "Determines if debug is output to bepinex log");
-            UseCLLC_Config = base.Config.Bind("2DragonEgg", "Use CLLC Level", defaultValue: true,
+            debugout = base.Config.Bind("1:General", "Debug Output", defaultValue: false, "Determines if debug is output to bepinex log");
+            UseCLLC_Config = base.Config.Bind("2:DragonEgg", "Use CLLC Level", defaultValue: true,
                 new ConfigDescription("Determines if you want to attempt to use CLLC to determine the level of your hatchling", null, new ConfigurationManagerAttributes { IsAdminOnly = true }));
-            LvlProb = base.Config.Bind("2DragonEgg", "Hatchling Level Probabilities", "75,25,5",
+            LvlProb = base.Config.Bind("2:DragonEgg", "Hatchling Level Probabilities", "75,25,5",
                 new ConfigDescription("List of the probabilities for a hatchling to spawn at a specific level ex: 75,25,5 will have a 75% chance to have 0 stars, 25% to have 1, and 5% to have two", null, new ConfigurationManagerAttributes { IsAdminOnly = true }));
-            UseCustomProcreation = base.Config.Bind("3Custom Procreation", "Is Custom Procreation Enabled", defaultValue: true,
+            MutationChanceLvl = base.Config.Bind("3:Custom Procreation", "Mutation Chance for Level", 5,
+                new ConfigDescription("Determines chance of a mutation occuring in the level, 0 has no chance, 100 will always mutate. Range of mutation is the levels of the parents +-1. Does NOT require CLLC", null, new ConfigurationManagerAttributes { IsAdminOnly = true }));
+            UseCustomProcreation = base.Config.Bind("3:Custom Procreation", "Is Custom Procreation Enabled", defaultValue: true,
                 new ConfigDescription("Determines if you want to attempt to use CLLC integration for level/effects/infusion", null, new ConfigurationManagerAttributes { IsAdminOnly = true }));
-            AllowMutation = base.Config.Bind("3Custom Procreation", "Allow Mutation", defaultValue: true,
+            AllowMutation = base.Config.Bind("3:Custom Procreation", "Allow Mutation", defaultValue: true,
                 new ConfigDescription("Determines if you want to allow for infusion/effects not from parents", null, new ConfigurationManagerAttributes { IsAdminOnly = true }));
-            MutationChance = base.Config.Bind("3Custom Procreation", "Mutation Chance", 5,
-                new ConfigDescription("Determines chance of a mutation occuring 0 has no chance, 100 will always mutate", null, new ConfigurationManagerAttributes { IsAdminOnly = true }));
-            HealOnConsume = base.Config.Bind("1General", "Heal on consume", defaultValue: false,
+            MutationChanceInf = base.Config.Bind("3:Custom Procreation", "Mutation Chance for Infusion", 5,
+               new ConfigDescription("Determines chance of a mutation occuring in the infusion, 0 has no chance, 100 will always mutate.", null, new ConfigurationManagerAttributes { IsAdminOnly = true }));
+            MutationChanceEff = base.Config.Bind("3:Custom Procreation", "Mutation Chance for Effect", 5,
+               new ConfigDescription("Determines chance of a mutation occuring in the effect, 0 has no chance, 100 will always mutate.", null, new ConfigurationManagerAttributes { IsAdminOnly = true }));
+            HealOnConsume = base.Config.Bind("1:General", "Heal on consume", defaultValue: false,
                 new ConfigDescription("Determines if you want to have tames heal a set amount on consume(pre H&H), or leave default with only regen occurring when not hungry ", null, new ConfigurationManagerAttributes { IsAdminOnly = true }));
-            OverrideHealValue = base.Config.Bind("1General", "UseListHealValues", defaultValue: true,
+            OverrideHealValue = base.Config.Bind("1:General", "UseListHealValues", defaultValue: true,
                 new ConfigDescription("Determines if you want to use the consumeheal values from the TameList, if set to false will heal 10% of max health when consuming", null, new ConfigurationManagerAttributes { IsAdminOnly = true }));
-            TamedFedMultiplier = base.Config.Bind("1General", "TamedFedMultiplier", defaultValue: 1f,
+            TamedFedMultiplier = base.Config.Bind("1:General", "TamedFedMultiplier", defaultValue: 1f,
                 new ConfigDescription("Determines if after being tamed how much longer the creature will stay fed", null, new ConfigurationManagerAttributes { IsAdminOnly = true }));
+            CommandKey = base.Config.Bind("4:Mass Commands", "Command Key", defaultValue: "G",
+                "What key will be used when interacting to command multiple in the area, can be any single key");
+            CycleKey = base.Config.Bind("4:Mass Commands", "Cycle Key", defaultValue: "H",
+                "What key will be used to cycle type of mass command, can be any single key");
+            CommandRange = base.Config.Bind("4:Mass Commands", "Command Range", defaultValue: 20,
+                new ConfigDescription("Range that mass command will try attempt to command tamed creatures", null, new ConfigurationManagerAttributes { IsAdminOnly = true }));
+            DefaultCommandType = base.Config.Bind("4:Mass Commands", "DefaultCommandType", defaultValue: 0,
+                "What type of command will the game start as default when loading into the game, 0=Only same creature, 1=Same creature and any creature it can mate with, 2=Any tamed creature in range");
 
             is_Basic = UseSimple.Value;
-            listloaded = TameListCfg.Init();
-            if (!listloaded)
-            {
-                DBG.blogWarning("No Tamelist Config found, using default config for creature tames");
-                DBG.blogWarning("Tamelist is required as of version 1.1.5");
-                DBG.blogWarning("Attempting to create Tamelist from config file");
-                cfgPath = base.Config.ConfigFilePath;
-                DBG.blogDebug("cfgPath="+ cfgPath);
-                TameListCfg.create_TamelistCFG();
-                loaded = TameListCfg.Init();
-                //loaded = initCfg();
-            }
-            else
-            {
-                DBG.blogDebug("Found Tamelist Config, using this file");
-                loaded = true;
-            }
-            if (debugout.Value == true)
-            {
-                DBG.blogWarning("Debug Enabled");
-            }
-            //loaded = initCfg();
-            CfgTable = new TameTable();
-            string text = "Your list has: ";
-            foreach (string key in cfgList.Keys)
-            {
-                text = text + key + ",  ";
-            }
-            DBG.blogInfo("AllTameable:" + text);
+            cfgPath = base.Config.ConfigFilePath;
+            LoadTamelists();
+            
             Root = new GameObject("AllTameable Root");
             prefabManager = Root.AddComponent<PrefabManager>();
             petManager = Root.AddComponent<PetManager>();
@@ -607,11 +675,8 @@ namespace AllTameable
             
             //clientInit();
             DBG.blogInfo("AllTameable Loaded");
-            if (useTamingTool.Value)
-            {
-                Jotunn.Managers.PrefabManager.OnVanillaPrefabsAvailable += PrefabManager.ItemReg;
-            }
-            
+            Jotunn.Managers.PrefabManager.OnVanillaPrefabsAvailable += PrefabManager.ItemReg;
+
             Jotunn.Managers.SynchronizationManager.OnConfigurationSynchronized += (obj, attr) =>
             {
                 TameUpdate = true;
@@ -620,6 +685,41 @@ namespace AllTameable
             jot_TamelistRPC = NetworkManager.Instance.AddRPC("jot_tamelistRPC", null, jot_RPCClientReceive);
             SynchronizationManager.Instance.AddInitialSynchronization(jot_TamelistRPC, SendInitialConfig);
         }
+
+        private static void LoadTamelists()
+        {
+            listloaded = TameListCfg.Init();
+            if (!listloaded)
+            {
+                DBG.blogWarning("No Tamelist Config found, using default config for creature tames");
+                DBG.blogWarning("Tamelist is required as of version 1.1.5");
+                DBG.blogWarning("Attempting to create Tamelist from config file");
+                DBG.blogDebug("cfgPath=" + cfgPath);
+                TameListCfg.create_TamelistCFG();
+                loaded = TameListCfg.Init();
+                //loaded = initCfg();
+            }
+            else
+            {
+                DBG.blogDebug("Found Tamelist Config, using this file");
+                loaded = true;
+            }
+            if (debugout.Value == true)
+            {
+                DBG.blogWarning("Debug Enabled");
+            }
+
+            //loaded = initCfg();
+            //CfgTable = new TameTable();
+            string text = "Your list has: ";
+            foreach (string key in cfgList.Keys)
+            {
+                text = text + key + ",  ";
+            }
+            DBG.blogInfo("AllTameable:" + text);
+        }
+
+
 
         public int requestcount = 0;
 
@@ -670,7 +770,7 @@ namespace AllTameable
                 harmony.PatchAll(typeof(global::AllTameable.CLLC.CLLCPatches.InterceptProcreation));
                 DBG.blogDebug("Patched InterceptProcreation");
                 harmony.PatchAll(typeof(global::AllTameable.CLLC.CLLCPatches.InterceptGrowup));
-                DBG.blogDebug("Patched InterceptProcreation");
+                DBG.blogDebug("Patched InterceptGrowup");
             }
         }
 
@@ -685,8 +785,14 @@ namespace AllTameable
                 //harmony.PatchAll(Assembly.GetExecutingAssembly());
                 harmony.PatchAll(typeof(global::AllTameable.RRRCoreTameable.RRRCoreTameable));
             }
+            if (Chainloader.PluginInfos.ContainsKey("aedenthorn.AutoFeed"))
+            {
+                DBG.blogInfo("Patching Autofeed");
+                //harmony.PatchAll(Assembly.GetExecutingAssembly());
+                harmony.PatchAll(typeof(global::AllTameable.AutoFeedAT.AutoFeedAT));
+            }
 
-            
+
 
             DBG.blogInfo("Patching Select");
             harmony.PatchAll(typeof(global::AllTameable.Plugin));
@@ -702,6 +808,8 @@ namespace AllTameable
 
             harmony.PatchAll(typeof(global::AllTameable.BetterTameHover));
             DBG.blogDebug("Patched Bettertamehover");
+            harmony.PatchAll(typeof(global::AllTameable.CommandGroup));
+            DBG.blogDebug("Patched CommandGroup");
             harmony.PatchAll(typeof(global::AllTameable.AllTame_AnimalAI));
             DBG.blogDebug("Patched AnimalAi");
             

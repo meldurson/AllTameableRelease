@@ -399,6 +399,10 @@ namespace AllTameable
                             {
                                 tmtbl.consumeItems = direct_value;
                             }
+                            else if (prop_key == "group")
+                            {
+                                tmtbl.group = direct_value;
+                            }
                             else if (prop_key == "offspringOnly")
                             {
                                 if (!isValidBool(direct_value)) { strFailed += "offspringOnly(not true or false), "; }
@@ -437,6 +441,7 @@ namespace AllTameable
                                 tmtbl.specificOffspringString += ","+direct_value;
                                 
                             }
+                            
                         }
                         if (!started_manual)
                         {

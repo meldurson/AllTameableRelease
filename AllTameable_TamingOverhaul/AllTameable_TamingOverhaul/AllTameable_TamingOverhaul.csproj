@@ -52,6 +52,9 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Libs\assembly_valheim.dll</HintPath>
     </Reference>
+    <Reference Include="AutoFeed">
+      <HintPath>..\Libs\AutoFeed.dll</HintPath>
+    </Reference>
     <Reference Include="BepInEx">
       <HintPath>..\Libs\BepInEx.dll</HintPath>
     </Reference>
@@ -88,6 +91,9 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Libs\UnityEngine.IMGUIModule.dll</HintPath>
     </Reference>
+    <Reference Include="UnityEngine.InputLegacyModule">
+      <HintPath>..\Libs\UnityEngine.InputLegacyModule.dll</HintPath>
+    </Reference>
     <Reference Include="UnityEngine.ParticleSystemModule">
       <HintPath>..\Libs\UnityEngine.ParticleSystemModule.dll</HintPath>
     </Reference>
@@ -109,21 +115,24 @@
     <EmbeddedResource Include="Assets\taming_icons" />
     <None Include="UnusedFiles\InManager.cs" />
     <Compile Include="AllTameable\AllTame_Interactable.cs" />
+    <Compile Include="AllTameable\CommandGroup.cs" />
     <Compile Include="AllTameable\CfgPackage.cs" />
-    <None Include="AllTameable\RRRNPatches - Backup.cs" />
-    <None Include="AllTameable\RRRNPatchesTemplate.cs" />
-    <None Include="AllTameable\RRRNPatches.cs" />
-    <None Include="AllTameable\Plugin - Cut.cs" />
+    <None Include="UnusedFiles\RRRNPatches - Backup.cs" />
+    <None Include="UnusedFiles\RRRNPatchesTemplate.cs" />
+    <None Include="UnusedFiles\RRRNPatches.cs" />
+    <None Include="UnusedFiles\Plugin - Cut.cs" />
+    <Compile Include="AllTameable\Utils.cs" />
+    <Compile Include="AllTameable\Patches\AutoFeed.cs" />
     <Compile Include="AllTameable\Trading.cs" />
     <Compile Include="AllTameable\Genetics.cs" />
-    <Compile Include="AllTameable\RRRCoreTameable.cs" />
+    <Compile Include="AllTameable\Patches\RRRCoreTameable.cs" />
     <Compile Include="AllTameable\CLLCPatches.cs" />
     <None Include="UnusedFiles\SE_Holder.cs" />
     <Compile Include="AllTameable\ProcreationInfo.cs" />
     <Compile Include="AllTameable\CLLC.cs" />
     <Compile Include="AllTameable\AllTame_AnimalAI.cs" />
-    <None Include="AllTameable\RPC.cs" />
-    <None Include="AllTameable\TameListCfg - v1.1.3.cs" />
+    <None Include="UnusedFiles\RPC.cs" />
+    <None Include="UnusedFiles\TameListCfg - v1.1.3.cs" />
     <Compile Include="AllTameable\TameListCfg.cs" />
     <Compile Include="AllTameable\BetterTameHover.cs" />
     <None Include="UnusedFiles\ConfigManager.cs" />
@@ -134,14 +143,11 @@
     <Compile Include="AllTameable\PrefabManager.cs" />
     <Compile Include="AllTameable\Utils2.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <None Include="Assets\taming_tool" />
-    <None Include="Assets\tameablelist.json" />
+    <None Include="UnusedFiles\taming_tool" />
+    <None Include="UnusedFiles\tameablelist.json" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Assets\defaultTamelist.txt" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="UnityEngine.PhysicsModule.dll" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -22,6 +22,8 @@ namespace AllTameable
         public static GameObject heartEffectGO;
 
         public static GameObject DragonEgg;
+        public static GameObject DrakeEggPrefab;
+        public static GameObject ChickenEggPrefab;
 
         private void Awake()
         {
@@ -91,7 +93,8 @@ namespace AllTameable
             if (Plugin.HatchingEgg.Value)
             {
                 DBG.blogDebug("init Dragonegg");
-                InitDrakeEgg();
+                AlterDragonEgg();
+                //InitEgg(zns.GetPrefab("Hatchling"));
             }
             TameListCfg.UnpackAndOverwriteMates();
             TameListCfg.UnpackAndOverwriteTrades();
@@ -304,7 +307,8 @@ namespace AllTameable
             wtame = zns.GetPrefab("Wolf").GetComponent<Tameable>();
             if (Plugin.HatchingEgg.Value)
             {
-                InitDrakeEgg();
+                AlterDragonEgg();
+                //InitEgg(zns.GetPrefab("Hatchling"));
             }
             createHeartEffect();
 
@@ -400,7 +404,18 @@ namespace AllTameable
 
                 MonsterAI component2 = go.GetComponent<MonsterAI>();
 
-                if (tb.changeFaction == false)
+                if(tb.group != "")
+                {
+                    if (go.GetComponent<Humanoid>() != null)
+                    {
+                        go.GetComponent<Humanoid>().m_group = tb.group;
+                    }
+                    else if (go.GetComponent<Character>() != null)
+                    {
+                        go.GetComponent<Character>().m_group = tb.group;
+                    }
+                }
+                else if (tb.changeFaction == false)
                 {
                     if (go.GetComponent<Humanoid>() != null)
                     {
@@ -515,7 +530,7 @@ namespace AllTameable
                 component2.m_consumeSearchRange = tb.consumeSearchRange;
                 List<string> list = new List<string>();
                 tb.consumeItems += ":" + string.Join(":", Plugin.hidden_foodNames);
-                //DBG.blogDebug("tb.consumeItems="+ tb.consumeItems);
+                DBG.blogDebug("tb.consumeItems="+ tb.consumeItems);
                 string[] array = tb.consumeItems.Split(':');
                 string[] array2 = array;
                 if (component2.m_consumeItems != null)
@@ -580,7 +595,7 @@ namespace AllTameable
                     }
                     else if (go.name == "Hatchling" && Plugin.HatchingEgg.Value)
                     {
-                        component3.m_offspring = DragonEgg;
+                        component3.m_offspring = DrakeEggPrefab;
                     }
                     /*
                     else if ((go.name == "Seeker" | go.name == "SeekerBrute") && Plugin.SeekerBroodOffspring.Value)
@@ -760,20 +775,91 @@ namespace AllTameable
             isInit = false;
             isInit2 = false;
         }
-
-        private static void InitDrakeEgg()
+        private static void AlterDragonEgg()
         {
-            GameObject prefab = ZNetScene.instance.GetPrefab("DragonEgg");
-            GameObject gameObject = Object.Instantiate(prefab, Root.transform);
-            gameObject.name = "HatchingDragonEgg";
-            Object.DestroyImmediate(gameObject.GetComponent<ItemDrop>());
+            if (!(bool)ChickenEggPrefab)
+            {
+                ChickenEggPrefab = ZNetScene.instance.GetPrefab("ChickenEgg");
+            }
+            if (!(bool)DrakeEggPrefab)
+            {
+                DrakeEggPrefab = ZNetScene.instance.GetPrefab("DragonEgg");
+            }
+            DBG.blogDebug("Set Chicken Egg");
+            GameObject eggclone = Jotunn.Managers.PrefabManager.Instance.CreateClonedPrefab("chickenEggClone" + "_at", ChickenEggPrefab);
+            GameObject notGrow = PrefabManager.CopyIntoParent(eggclone.GetComponent<Transform>().Find("Not Growing"), DrakeEggPrefab.transform).gameObject;
+            EggGrow eggGrow = DrakeEggPrefab.AddComponent<EggGrow>(eggclone.GetComponent<EggGrow>());
+            eggGrow.m_notGrowingObject = notGrow;
+            ItemDrop iDrop = DrakeEggPrefab.GetComponent<ItemDrop>();
+            //EggGrow eggGrow = DrakeEggPrefab.AddComponent<EggGrow>(eggclone.GetComponent<EggGrow>());
+            //Component.DestroyImmediate(iDrop);
+            //iDrop = DrakeEggPrefab.AddComponent<ItemDrop>(eggclone.GetComponent<ItemDrop>());
+            //iDrop.GetCopyOf<ItemDrop>(eggclone.GetComponent<ItemDrop>());
+            DBG.blogDebug("Added EggGrow");
+            eggGrow.m_grownPrefab = SpawnMini(ZNetScene.instance.GetPrefab("Hatchling"));
+
+        }
+
+        private static GameObject InitEgg(GameObject prefab, bool DrakeEgg = true, string color = "default", float size = 1f)
+        {
+            DBG.blogDebug("before init");
+            if (!(bool)ChickenEggPrefab)
+            {
+                ChickenEggPrefab = ZNetScene.instance.GetPrefab("ChickenEgg");
+            }
+            if (!(bool)DrakeEggPrefab)
+            {
+                DrakeEggPrefab = ZNetScene.instance.GetPrefab("DragonEgg");
+            }
+            DBG.blogDebug("past init");
+            GameObject gameObject = Object.Instantiate(ChickenEggPrefab, Root.transform);
+            if(prefab.name == "Hatchling")
+            {
+                DBG.blogDebug("Replacing Dragon Egg");
+                //DrakeEggPrefab = Object.Instantiate(ZNetScene.instance.GetPrefab("DragonEgg"), Root.transform);
+                DrakeEggPrefab.name = "old_DragonEgg";
+                gameObject.name = ("DragonEgg");
+                DBG.blogDebug("Replaced Dragon Egg");
+            }
+            else
+            {
+                gameObject.name = (prefab.name + "Egg");//.Replace("(Clone)", ""); ;
+            }
+            
+            //Object.DestroyImmediate(gameObject.GetComponent<ItemDrop>());
             //ItemDrop itdrop = prefab.gameObject.GetComponent<ItemDrop>();
             //gameObject.AddComponent<ItemDrop>(itdrop);
-            Hatch hatch = gameObject.AddComponent<Hatch>();
-            hatch.m_name = prefab.GetComponent<ItemDrop>().m_itemData.m_shared.m_name;
-            hatch.m_grownPrefab = zns.GetPrefab("Hatchling");
-            hatch.m_growTime = Plugin.HatchingTime.Value;
-            DragonEgg = gameObject;
+            //GameObject itemBase = Jotunn.Managers.PrefabManager.Instance.GetPrefab("Fish9");
+            DBG.blogDebug("past clone");
+            if (DrakeEgg)
+            {
+                DBG.blogDebug("in drakegg");
+                GameObject clone = Jotunn.Managers.PrefabManager.Instance.CreateClonedPrefab("DragonEgg" + "_at", DrakeEggPrefab);
+                //var clone = itemBase;
+                var attachbase = clone.GetComponent<Transform>().Find("attach");
+                var attachcopy = PrefabManager.AttachChild(gameObject.transform.Find("attach"), attachbase.transform.Find("model"), "DrakeEggModel");
+                Transform toremove = gameObject.transform.Find("attach").Find("default");
+                if ((bool)toremove) { toremove.parent = null; }
+            }
+            if (false) //old hatch
+            {
+                DBG.blogDebug("making hatch");
+                Hatch hatch = gameObject.AddComponent<Hatch>();
+                //hatch.m_name = prefab.GetComponent<ItemDrop>().m_itemData.m_shared.m_name;
+                hatch.m_grownPrefab = zns.GetPrefab("Hatchling");
+                hatch.m_growTime = Plugin.HatchingTime.Value;
+                DragonEgg = gameObject;
+                DBG.blogDebug("Set Hatch hatch");
+            }
+
+            ItemDrop.ItemData iData = gameObject.GetComponent<ItemDrop>().m_itemData;
+            iData.m_dropPrefab = gameObject;
+
+            EggGrow eggGrow = gameObject.GetComponent<EggGrow>();
+            eggGrow.m_grownPrefab = SpawnMini(prefab);
+
+
+            
             try
             {
                 //PrefabManager.PostRegister(gameObject);
@@ -784,6 +870,7 @@ namespace AllTameable
             {
                 DBG.blogInfo("Already Registered DragonEgg");
             }
+            return gameObject;
         }
     }
 }

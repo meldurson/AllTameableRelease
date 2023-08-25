@@ -29,10 +29,6 @@ namespace AllTameable.Genetics
         }
 
 
-
-
-
-
         [HarmonyPostfix]
         [HarmonyPatch(typeof(Procreation), "MakePregnant")]
 
@@ -216,6 +212,7 @@ namespace AllTameable.Genetics
                         //DBG.blogDebug(partners.ToString());
                         partners = partners.Skip(1).ToArray();
                         //DBG.blogDebug(partners.ToString());
+                        bool hasSpecSameMate = false;
                         foreach (string combinedValue in partners)
                         {
                             string[] splitValue = combinedValue.Replace(")", "").Split('(');
@@ -223,6 +220,7 @@ namespace AllTameable.Genetics
                             //DBG.blogDebug("key=" + splitValue[0] + ", value=" + splitValue[1]);
                             specificMates addPartner = new specificMates();
                             addPartner.prefabName = splitValue[0];
+                            if(addPartner.prefabName == prefabname) { hasSpecSameMate = true; }
                             string[] prefchances = splitValue[1].Split('/');
                             float totalchance = 0;
                             foreach (string chancepkg in prefchances)
@@ -235,7 +233,12 @@ namespace AllTameable.Genetics
                                 {
                                     DBG.blogDebug("found go for " + mate_go.name);
                                     //Procreation mate_proc = mate_go.GetComponent<Procreation>();
-                                    if (mate_go.GetComponent<Procreation>() != null)
+
+                                    if(mate_go.GetComponent<Growup>() != null)
+                                    {
+                                        chanceoff.offspring = mate_go;
+                                    }
+                                    else if (mate_go.GetComponent<Procreation>() != null)
                                     {
                                         chanceoff.offspring = mate_go.GetComponent<Procreation>().m_offspring;
                                         DBG.blogDebug("chanceoff.offspring=" + chanceoff.offspring.name);
@@ -277,6 +280,15 @@ namespace AllTameable.Genetics
                             }
                             specMates.Add(addPartner);
 
+                        }
+                        if (!hasSpecSameMate && tmtbl.canMateWithSelf)
+                        {
+                            specificMates addSamePart = new specificMates();
+                            addSamePart.prefabName = prefabname;
+                            chanceOffspring defaultOff = new chanceOffspring();
+                            defaultOff.offspring = proc.m_offspring;
+                            addSamePart.possibleOffspring.Add(defaultOff);
+                            specMates.Add(addSamePart);
                         }
                         tmtbl.ListofRandomOffspring = specMates;
                         foreach (specificMates specmates in tmtbl.ListofRandomOffspring)
@@ -333,25 +345,45 @@ namespace AllTameable.Genetics
             }
             if (foundMate != null)
             {
-                //foundMate.possibleOffspring
-                float rndm = UnityEngine.Random.Range(0f, 100f);
-                float currentchance = 0;
-
-                foreach (chanceOffspring chanceOff in foundMate.possibleOffspring)
+                if (foundMate.possibleOffspring.Count > 1)
                 {
-                    currentchance += chanceOff.chance;
-                    if (currentchance >= rndm)
-                    {
-                        DBG.blogDebug("currentchance=" + currentchance + ", rndm=" + rndm);
-                        proc.m_offspring = chanceOff.offspring;
-                        proc.m_offspringPrefab = chanceOff.offspring;
-                        DBG.blogDebug("proc.m_offspring=" + proc.m_offspring.name);
 
-                        proc.m_nview.GetZDO().Set("OffspringName", proc.m_offspring.name);
-                        break;
+                    //foundMate.possibleOffspring
+                    float rndm = UnityEngine.Random.Range(0f, 100f);
+                    float currentchance = 0;
+
+                    foreach (chanceOffspring chanceOff in foundMate.possibleOffspring)
+                    {
+                        currentchance += chanceOff.chance;
+                        if (currentchance >= rndm)
+                        {
+                            DBG.blogDebug("currentchance=" + currentchance + ", rndm=" + rndm);
+                            proc.m_offspring = chanceOff.offspring;
+                            proc.m_offspringPrefab = chanceOff.offspring;
+                            DBG.blogDebug("proc.m_offspring=" + proc.m_offspring.name);
+
+                            proc.m_nview.GetZDO().Set("OffspringName", proc.m_offspring.name);
+                            break;
+                        }
                     }
                 }
+                else
+                {
+                    chanceOffspring chanceOff = foundMate.possibleOffspring[0];
+                    DBG.blogDebug("Only one possible offspring for " + partner.name);
+                    proc.m_offspring = chanceOff.offspring;
+                    proc.m_offspringPrefab = chanceOff.offspring;
+                    DBG.blogDebug("proc.m_offspring=" + proc.m_offspring.name);
+
+                    proc.m_nview.GetZDO().Set("OffspringName", proc.m_offspring.name);
+                }
             }
+            else
+            {
+                DBG.blogDebug("Test");
+                DBG.blogDebug("No specific offspring for " + partner.name);
+            }
+            
 
 
         }

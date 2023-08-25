@@ -14,10 +14,13 @@ namespace AllTameable
     public class PrefabManager : MonoBehaviour
     {
         public static string tametoolname = Plugin.tamingtoolPrefabName;
+        public static string advtoolname = Plugin.advtoolPrefabName;
         public static string t1foodname = Plugin.t1foodPrefabName;
         public static string t2foodname = Plugin.t2foodPrefabName;
+        public static string t3foodname = Plugin.t3foodPrefabName;
         public StatusEffect effect = ScriptableObject.CreateInstance<StatusEffect>();
         public GameObject Root;
+        private static GameObject FlakeEffect;
         private static AssetBundle tamingAssets;
 
 
@@ -37,9 +40,15 @@ namespace AllTameable
 
         public static void ItemReg()
         {
-            addTameStick();
+            if (Plugin.useTamingTool.Value)
+            {
+                addTameStick();
+                addAdvTameStick();
+            }
+            
             addT1TameFood();
             addT2TameFood();
+            addT3TameFood();
 
             //RecipeReg();
 
@@ -63,9 +72,11 @@ namespace AllTameable
             tamestickConfig.AddRequirement(new RequirementConfig("Mushroom", 1));
             tamestickConfig.AddRequirement(new RequirementConfig("Carrot", 1));
             tamestickConfig.AddRequirement(new RequirementConfig("Resin", 1));
+            tamestickConfig.CraftingStation = "piece_workbench";
+            tamestickConfig.MinStationLevel = 1;
 
             CustomItem tamestick = new CustomItem(tametoolname, "Club", tamestickConfig);
-            DBG.blogDebug("Adding TamingStick");
+            //DBG.blogDebug("Adding TamingStick");
             ItemManager.Instance.AddItem(tamestick);
             Transform tameTransform = Jotunn.Managers.PrefabManager.Instance.GetPrefab(tametoolname).transform.Find("attach").transform;
             var id = tamestick.ItemDrop;
@@ -122,6 +133,347 @@ namespace AllTameable
             }
         }
 
+        public static void addAdvTameStick()
+        {
+            //AssetBundle embeddedResourceBundle = AssetUtils.LoadAssetBundleFromResources("taming_icons", Assembly.GetExecutingAssembly());
+            //create tame tool
+            UnityEngine.Object[] iconsprites = tamingAssets.LoadAssetWithSubAssets("Assets/CustomItems/AdvTamingTool.png");
+            DBG.blogDebug("Adding recipe for Advanced TamingStick");
+            ItemConfig tamestickConfig = new ItemConfig();
+            tamestickConfig.AddRequirement(new RequirementConfig("Crystal", 3));
+            tamestickConfig.AddRequirement(new RequirementConfig("MushroomMagecap", 2));
+            tamestickConfig.AddRequirement(new RequirementConfig("Eitr", 5));
+            tamestickConfig.AddRequirement(new RequirementConfig("FineWood", 10));
+            tamestickConfig.AddRequirement(new RequirementConfig("MeadHealthMajor", 2));
+            tamestickConfig.CraftingStation = "piece_workbench";
+            tamestickConfig.MinStationLevel = 2;
+
+            CustomItem tamewand = new CustomItem(advtoolname, "Club", tamestickConfig);
+            //DBG.blogDebug("Adding TamingStick");
+            ItemManager.Instance.AddItem(tamewand);
+            Transform tameTransform = Jotunn.Managers.PrefabManager.Instance.GetPrefab(advtoolname).transform.Find("attach").transform;
+            var id = tamewand.ItemDrop;
+            var id2 = id.m_itemData;
+            id2.m_shared.m_name = "Taming Wand";
+            id2.m_shared.m_description = "Increased range for taming interaction";
+            id2.m_shared.m_icons[0] = iconsprites[1] as Sprite;
+            string[] meshtoadd = { "Eitr", "Crystal", "MushroomMagecap", "SpearCarapace" };
+            string[] attachpoint = { "attach", "Cube", "attach", "attach" };
+            for(int i =0; i< meshtoadd.Count();i++)
+            {
+                string itemname = meshtoadd[i];
+                try
+                {
+
+                    GameObject itemBase = Jotunn.Managers.PrefabManager.Instance.GetPrefab(itemname);
+                    GameObject clone = Jotunn.Managers.PrefabManager.Instance.CreateClonedPrefab(itemname + "_at", itemBase);
+                    //var clone = itemBase;
+                    var attachbase = clone.GetComponent<Transform>().Find(attachpoint[i]);
+
+                    //attachbase.name = attachbase.name + "_" + itemname;
+                    var attachcopy = AttachChild(tameTransform, attachbase, itemname);
+                    Transform cptrans = attachcopy.transform;
+                    if (itemname == "Eitr")
+                    {
+                        cptrans.localPosition = new Vector3(0, 0, 0.54f);
+                        //cptrans.localEulerAngles = new Vector3(130, 180, 180);
+                        cptrans.localScale = new Vector3(0.7f, 0.7f, 0.7f);
+                        Transform toRemove = attachcopy.Find("Radiator");
+                        toRemove.gameObject.SetActive(false);
+                        toRemove = attachcopy.Find("sparcs_world");
+                        toRemove.gameObject.SetActive(false);
+                        //if ((bool)toRemove) { toRemove.parent = null; }
+                        if (!(bool)FlakeEffect) { setFlakes(); }
+                        DBG.blogDebug("Set Flakes");
+                        if (!(bool)FlakeEffect)
+                        {
+                            DBG.blogDebug("Flakes still null");
+                        }
+                        Transform partTrans = AttachChild(attachcopy, FlakeEffect.transform, "newFlake");
+                        //Transform partTrans = attachcopy.Find("sparcs_world");
+                        partTrans.localEulerAngles = new Vector3(350, 0, 17);
+                        partTrans.localScale = new Vector3(1, 1, 1);
+                        ParticleSystem part = partTrans.GetComponent<ParticleSystem>();
+                        if ((bool)part)
+                        {
+                            part.emissionRate = 5;
+                            part.maxParticles = 20;
+                            part.startSize = 0.03f;
+                            part.startLifetime = 2.5f;
+                            part.startColor = new Color(0.5f, 0.5f, 1, 1);
+            
+                            ParticleSystem.ForceOverLifetimeModule Force = part.forceOverLifetime; // new ParticleSystem.ForceOverLifetimeModule();
+                            Force.enabled = true;
+                            //Force.y = new ParticleSystem.MinMaxCurve(-2, 2);
+                            Force.space = ParticleSystemSimulationSpace.Local;
+                            Force.yMultiplier = 0.4f;
+                            
+                            ParticleSystem.VelocityOverLifetimeModule Velo = part.velocityOverLifetime;
+                            Velo.space = ParticleSystemSimulationSpace.Local;
+                            Velo.enabled = true;
+                            Velo.orbitalXMultiplier = 1;
+                            Velo.orbitalZMultiplier = 1;
+                            Velo.orbitalYMultiplier = 6;
+                            Velo.radialMultiplier = 0.03f;
+                            Velo.yMultiplier = -0.3f;
+
+                            ParticleSystem.ShapeModule Shape = part.shape;
+                            Shape.radius = 0.1f;
+                            ParticleSystem.NoiseModule noise = part.noise;
+                            noise.enabled = false;
+                            ParticleSystem.ColorOverLifetimeModule col= part.colorOverLifetime;
+                            GradientColorKey key0 = new GradientColorKey(new Color(0, 0.2f, 1, 1), 0);
+                            //GradientColorKey key0 = new GradientColorKey(new Color(0.2f, 0.3f, 1, 1), 0);
+                            GradientColorKey key1 = new GradientColorKey(new Color(0, 0.4f, 1f, 1), 0.1f);
+                            GradientColorKey key2 = new GradientColorKey(new Color(0.5f, 0.2f, 0.7f, 1), 0.6f);
+                            GradientColorKey[] colKeys = { key0, key1, key2 };
+                            Gradient grad = col.color.gradient;
+                            grad.colorKeys = colKeys;
+                            //ParticleSystem.MinMaxGradient minmaxGrad = new ParticleSystem.MinMaxGradient(grad);
+                            col.color = new ParticleSystem.MinMaxGradient(grad);
+                            DBG.blogDebug("col.color.gradient.colorKeys[0].color=" + col.color.gradient.colorKeys[0].color);
+
+                        }
+
+                        Transform pnt_light = attachcopy.Find("Point light");
+                        Light light = pnt_light.GetComponent<Light>();
+                        light.intensity = 3;
+                        light.range = 0.2f;
+                        light.color = new Color(1, 0, 1, 1);
+                        LightFlicker flick = pnt_light.GetComponent<LightFlicker>();
+                        flick.m_baseIntensity = 1;
+
+                        Transform core = attachcopy.Find("core");
+                        if ((bool)core)
+                        {
+                            UtilColorFade colFade = core.gameObject.AddComponent<UtilColorFade>();
+                            colFade.roughness = 0.1f;
+                            colFade.cycletime = 10;
+                            colFade.mat = core.GetComponent<MeshRenderer>().material;
+                            colFade.colType = "_EmissionColor";
+                            GradientColorKey col1 = new GradientColorKey(new Color(0.4f, 0, 0.4f), 0);
+                            GradientColorKey col2 = new GradientColorKey(new Color(0, 0.5f, 0.5f), 0.33f);
+                            GradientColorKey col3 = new GradientColorKey(new Color(0.4f, 0, 0.05f), 0.66f);
+                            GradientColorKey col4 = new GradientColorKey(new Color(0.4f, 0, 0.4f), 1);
+                            GradientColorKey[] colKeys = { col1, col2, col3, col4 };
+                            //colFade.clrKeys = colKeys;
+                            Gradient grad = new Gradient();
+                            grad.colorKeys = colKeys;
+                            colFade.grad = grad;
+                            DBG.blogDebug("colFade.clrKeys=" + colFade.grad.colorKeys[1].color);
+
+
+                        }
+                    }
+                    else if (itemname == "Crystal")
+                    {
+                        //cptrans.localPosition = new Vector3(0, 0.01f, 0.46f);
+                        //cptrans.localEulerAngles = new Vector3(20, 0, 0);
+                        cptrans.localScale = new Vector3(0.015f, 0.04f, 0.015f);
+                        int numcrystal = 5;
+                        for(int j = 0; j < numcrystal; j++)
+                        {
+                            var crystal = cptrans;
+                            if (j > 0) { crystal = AttachChild(tameTransform, attachcopy, itemname); }
+                            crystal.localEulerAngles = new Vector3(((j * 360 / numcrystal)) % 360, 90, -40);
+                            crystal.localPosition = new Vector3(0, 0.01f, 0.52f);
+                        }
+                    }
+                    else if (itemname == "MushroomMagecap")
+                    {
+                        cptrans.localPosition = new Vector3(0.07f, 0, 0.24f);
+                        cptrans.localEulerAngles = new Vector3(270, 148, 0);
+                        cptrans.localScale = new Vector3(0.75f, 0.45f, 0.75f);
+                    }
+                    else if (itemname == "SpearCarapace")
+                    {
+                        cptrans.localPosition = new Vector3(0, 0, 0.425f);
+                        cptrans.localEulerAngles = new Vector3(0, 180, 0);
+                        cptrans.localScale = new Vector3(1, 1, 0.4f);
+                        MeshRenderer meshRen = attachcopy.Find("carapacespear").GetComponent<MeshRenderer>();
+                        if (meshRen != null)
+                        {
+                            //meshRen.material.color = new Color(1, 0.8f, 0, 1);
+                            //meshRen.material.EnableKeyword("_EMISSION");
+                            //meshRen.material.SetColor("_EmissionColor", new Color(0.05f, 0.02f, 0.04f, 0));
+                            meshRen.material.color = new Color(2, 1.7f, 1.7f, 0.6f);
+                        }
+                    }
+                }
+                catch
+                {
+                    Debug.LogWarning("Failed to add " + itemname);
+                }
+            }
+            try
+            {
+                tameTransform.Find("model").gameObject.SetActive(false);
+            }
+            catch
+            {
+                Debug.LogWarning("failed to remove model");
+            }
+        }
+
+
+        public static void addT3TameFood()
+        {
+            UnityEngine.Object[] iconspritesfood = tamingAssets.LoadAssetWithSubAssets("Assets/CustomItems/T3TamingFood.png");
+            DBG.blogDebug("Adding recipe for TameFoodT3");
+            ItemConfig tamefoodConfig = new ItemConfig();
+            tamefoodConfig.AddRequirement(new RequirementConfig("MeadEitrMinor", 4));
+            tamefoodConfig.AddRequirement(new RequirementConfig("MeadHealthMajor", 2));
+            tamefoodConfig.AddRequirement(new RequirementConfig("Fish9", 1)); //fish9=anglerfish
+            tamefoodConfig.AddRequirement(new RequirementConfig("MushroomMagecap", 5));
+            
+            tamefoodConfig.CraftingStation = "piece_cauldron";
+            tamefoodConfig.MinStationLevel = 5;
+            tamefoodConfig.Amount = 1;
+            //tamefoodT1Config.AddRequirement(new RequirementConfig("LeatherScraps", 1));
+
+            CustomItem tamefood = new CustomItem(t3foodname, "MushroomMagecap", tamefoodConfig);
+            ItemManager.Instance.AddItem(tamefood);
+            Transform tamefoodTransform = Jotunn.Managers.PrefabManager.Instance.GetPrefab(t3foodname).transform; //.Find("attach").transform;
+            var id_tamefood = tamefood.ItemDrop;
+            var id2_tamefood = id_tamefood.m_itemData;
+            id2_tamefood.m_shared.m_name = "Excellent Taming Food";
+            id2_tamefood.m_shared.m_description = "Food that can be fed to creatures you are attempting to tame to give a significant reduction in taming time";
+            id2_tamefood.m_shared.m_icons[0] = iconspritesfood[1] as Sprite;
+            tamefoodTransform.Find("attach").parent = null;
+            try
+            {
+                GameObject itemBase = Jotunn.Managers.PrefabManager.Instance.GetPrefab("Fish9");
+                GameObject clone = Jotunn.Managers.PrefabManager.Instance.CreateClonedPrefab("fish9" + "_at", itemBase);
+                var attachbase = clone.GetComponent<Transform>().Find("attachobj");
+                var attachcopy = AttachChild(tamefoodTransform, attachbase, "AnglerFish");
+                Transform toremove = attachcopy.Find("DeadSpeak_Base");
+                attachcopy.localScale = new Vector3(0.6f, 0.6f, 0.6f);
+                attachcopy.GetChild(0).gameObject.layer = 12; //item
+                if ((bool)toremove) { toremove.parent = null; }
+                try
+                {
+                    GameObject flametalPrefab = Jotunn.Managers.PrefabManager.Instance.GetPrefab("FlametalOre");
+                    MeshRenderer fametalMesh = Jotunn.Managers.PrefabManager.Instance.CreateClonedPrefab("FlametalOreCopy", flametalPrefab).transform.Find("stone").GetComponent<MeshRenderer>();
+                    if (fametalMesh != null)
+                    {
+                        MeshRenderer fishmesh = attachcopy.GetChild(0).GetComponent<MeshRenderer>();
+                        fishmesh.material = fametalMesh.material;
+                        fishmesh.material.color = new Color(0.5f, 0, 0.7f, 1);
+                        fishmesh.material.SetFloat("_BumpScale", 0.8f);
+                        fishmesh.material.SetFloat("_Metallic", 0.1f);
+                        fishmesh.material.SetColor("_EmissionColor", new Color(0.6f, 0, 2, 0));
+                    }
+                } catch{}
+
+
+            }
+            catch
+            {
+                Debug.LogWarning("Food Failed to add " + "fish9");
+            }
+            try
+            {
+                GameObject itemBase = Jotunn.Managers.PrefabManager.Instance.GetPrefab("DragonTear");
+                GameObject clone = Jotunn.Managers.PrefabManager.Instance.CreateClonedPrefab("DragonTear2" + "_at", itemBase);
+                
+                var attachbase = clone.GetComponent<Transform>().Find("attach");
+                var attachcopy = AttachChild(tamefoodTransform, attachbase.transform.Find("Point light"), "DragonTear_Light1");
+                var attachflare = AttachChild(attachcopy, attachbase.transform.Find("flare"), "flare");
+                
+                attachcopy.name = "Light_1";
+                Light PLPart = attachcopy.GetComponent<Light>();
+                if (PLPart != null)
+                {
+                    //smokePart.startSize = 1.6f;
+                    PLPart.color = new Color(0.7f, 0.1f, 1, 1);
+                    PLPart.intensity = 5;
+                    PLPart.range = 0.6f;
+                }
+                else
+                {
+                    DBG.blogDebug("Light is null");
+                }
+                LightFlicker flickPart = attachcopy.GetComponent<LightFlicker>();
+                if (flickPart != null)
+                {
+                    //smokePart.startSize = 1.6f;
+                    flickPart.m_baseIntensity = 3; ;
+                    //flickPart.m_basePosition = new Vector3(0, 0.2f, 0);
+                    flickPart.m_flickerSpeed = 2.8f;
+                    flickPart.m_movement = 0.15f;
+                }
+                else
+                {
+                    DBG.blogDebug("Flicker is null");
+                }
+                ParticleSystem flarePart = attachflare.GetComponent<ParticleSystem>();
+                if (flarePart != null)
+                {
+                    flarePart.startSize = 0.8f;
+                    flarePart.startColor = new Color(1, 0, 1, 0.19f);
+                }
+                //var attachcopy2 = AttachChild(tamefoodTransform, attachcopy, "DragonTear_Light2");
+                var attachcopy2 = Component.Instantiate(attachcopy, tamefoodTransform);
+                
+                attachcopy2.name = "Light_2";
+                Light PLPart2 = attachcopy2.GetComponent<Light>();
+                if (PLPart2 != null)
+                {
+                    PLPart2.color = new Color(1f, 0, 0, 1);
+                }
+                LightFlicker flickPart2 = attachcopy.GetComponent<LightFlicker>();
+                if (flickPart2 != null)
+                {
+                    flickPart2.m_flickerSpeed = 3.2f;
+                }
+                /*
+                for (int i = 0; i < attachcopy2.childCount; i++)
+                {
+                    DBG.blogDebug("T3child#" + i + "=" + attachcopy2.transform.GetChild(i).name);
+                }
+                */
+                    ParticleSystem flarePart2 = attachcopy2.Find("flare_at").GetComponent<ParticleSystem>();
+                if (flarePart2 != null)
+                {
+                    flarePart2.startColor = new Color(1, 0, 0, 0.19f);
+                }
+            }
+            catch
+            {
+                Debug.LogWarning("Food Failed to add " + "DragonTear_Light");
+            }
+            try
+            {
+                GameObject itemBase = Jotunn.Managers.PrefabManager.Instance.GetPrefab("vfx_Potion_eitr_minor");
+                GameObject clone = Jotunn.Managers.PrefabManager.Instance.CreateClonedPrefab("eitrpotion" + "_at", itemBase);
+                var attachbase = clone.GetComponent<Transform>();
+                var attachcopy = AttachChild(tamefoodTransform, attachbase.Find("trails"), "EitrPotion");
+                attachcopy.localScale = new Vector3(0.45f, 0.45f, 0.45f);
+                attachcopy.gameObject.AddComponent<UtilAlignUp>();
+                ParticleSystem trailsPart = attachcopy.GetComponent<ParticleSystem>();
+                trailsPart.loop = true;
+                trailsPart.emissionRate = 10;
+                trailsPart.gravityModifier = 0.1f;
+
+            }
+            catch
+            {
+                Debug.LogWarning("Food Failed to add " + "fish9");
+            }
+            //tamefoodTransform.gameObject.layer = 12; //item
+
+
+
+        }
+
+        private static void setFlakes()
+        {
+            GameObject itemBase = Jotunn.Managers.PrefabManager.Instance.GetPrefab("DragonTear");
+            GameObject clone = Jotunn.Managers.PrefabManager.Instance.CreateClonedPrefab("DragonTear" + "_at", itemBase);
+            FlakeEffect = clone.transform.Find("attach").Find("pixel flakes").gameObject;
+        }
+
+
         public static void addT2TameFood()
         {
             UnityEngine.Object[] iconspritesfoodT2 = tamingAssets.LoadAssetWithSubAssets("Assets/CustomItems/T2TamingFood.png");
@@ -132,6 +484,7 @@ namespace AllTameable
             tamefoodT2Config.AddRequirement(new RequirementConfig("DragonTear", 1));
             tamefoodT2Config.CraftingStation = "piece_cauldron";
             tamefoodT2Config.MinStationLevel = 3;
+            tamefoodT2Config.Amount = 3;
             //tamefoodT1Config.AddRequirement(new RequirementConfig("LeatherScraps", 1));
 
             CustomItem tamefood = new CustomItem(t2foodname, "Bread", tamefoodT2Config);
@@ -142,22 +495,22 @@ namespace AllTameable
             id2_tamefood.m_shared.m_name = "Superior Taming Food";
             id2_tamefood.m_shared.m_description = "Food that can be fed to creatures you are attempting to tame to give a reasonable reduction in taming time";
             id2_tamefood.m_shared.m_icons[0] = iconspritesfoodT2[1] as Sprite;
-            GameObject itemBaseMush = Jotunn.Managers.PrefabManager.Instance.GetPrefab("DragonTear");
+            GameObject itemBase = Jotunn.Managers.PrefabManager.Instance.GetPrefab("DragonTear");
 
             try
             {
-                GameObject itemBase = Jotunn.Managers.PrefabManager.Instance.GetPrefab("DragonTear");
-                GameObject clone = Jotunn.Managers.PrefabManager.Instance.CreateClonedPrefab("DragonTear" + "_at", itemBaseMush);
-                DBG.blogDebug("added " + clone.name + " as a prefab");
+                //GameObject itemBase = Jotunn.Managers.PrefabManager.Instance.GetPrefab("DragonTear");
+                GameObject clone = Jotunn.Managers.PrefabManager.Instance.CreateClonedPrefab("DragonTear" + "_at", itemBase);
+                //DBG.blogDebug("added " + clone.name + " as a prefab");
                 var attachbase = clone.GetComponent<Transform>().Find("attach");
                 for (int i = 0; i < attachbase.childCount; i++)
                 {
-                    DBG.blogDebug("T2child#" + i + "=" + attachbase.transform.GetChild(i).name);
-                    var attachcopy =AttachChild(tamefoodTransform, attachbase.transform.GetChild(i), "DragonTear");
+                    //DBG.blogDebug("T2child#" + i + "=" + attachbase.transform.GetChild(i).name);
+                    var attachcopy =AttachChild(tamefoodTransform, attachbase.transform.GetChild(i), attachbase.transform.GetChild(i).name);
                     switch (attachcopy.name)
                     {
                         case "flare_at":
-                            DBG.blogDebug("In flare case");
+                            //DBG.blogDebug("In flare case");
                             ParticleSystem flarePart = attachcopy.GetComponent<ParticleSystem>();
                             if (flarePart != null)
                             {
@@ -166,7 +519,7 @@ namespace AllTameable
                             }
                             break;
                         case "smoke_expl_at":
-                            DBG.blogDebug("In smoke_expl_at case");
+                            //DBG.blogDebug("In smoke_expl_at case");
                             ParticleSystem smokePart = attachcopy.GetComponent<ParticleSystem>();
                             if (smokePart != null)
                             {
@@ -176,7 +529,8 @@ namespace AllTameable
                             }
                             break;
                         case "pixel flakes_at":
-                            DBG.blogDebug("In pixel flakes_at case");
+                            //DBG.blogDebug("In pixel flakes_at case");
+                            FlakeEffect = attachcopy.gameObject;
                             ParticleSystem flakesPart = attachcopy.GetComponent<ParticleSystem>();
                             if (flakesPart != null)
                             {
@@ -189,7 +543,7 @@ namespace AllTameable
                             }
                             break;
                         case "model_at":
-                            DBG.blogDebug("In model_at case");
+                            //DBG.blogDebug("In model_at case");
                             attachcopy.localEulerAngles = new Vector3(0, 0, 0);
                             attachcopy.localPosition = new Vector3(0, 0.14f, 0);
                             attachcopy.localScale = new Vector3(0.73f, 0.7f, 1f);
@@ -211,7 +565,7 @@ namespace AllTameable
 
                             break;
                         case "Point light_at":
-                            DBG.blogDebug("In Point light_at case");
+                            //DBG.blogDebug("In Point light_at case");
                             Light PLPart = attachcopy.GetComponent<Light>();
                             if (PLPart != null)
                             {
@@ -317,17 +671,17 @@ namespace AllTameable
 
 
 
-            DBG.blogDebug("Adding T1TameFood");
-            DBG.blogDebug("itemnames.Length=" + itemnames.Length);
-            DBG.blogDebug("itemnames=" + itemnames);
-            DBG.blogDebug("itemnames.ToString()=" + itemnames.ToString());
+           // DBG.blogDebug("Adding T1TameFood");
+           // DBG.blogDebug("itemnames.Length=" + itemnames.Length);
+           // DBG.blogDebug("itemnames=" + itemnames);
+           // DBG.blogDebug("itemnames.ToString()=" + itemnames.ToString());
             GameObject itemBaseMush = Jotunn.Managers.PrefabManager.Instance.GetPrefab("MushroomYellow");
             for (int j = 0; j < itemnames.Length; j++)
             {
                 try
                 {
                     GameObject clone = Jotunn.Managers.PrefabManager.Instance.CreateClonedPrefab(itemnames[j] + "_at", itemBaseMush);
-                    DBG.blogDebug("added " + itemnames[j] + "_at as a prefab");
+                    //DBG.blogDebug("added " + itemnames[j] + "_at as a prefab");
                     var attachbase = clone.GetComponent<Transform>().Find("attach");
                     var attachcopy = AttachChild(tamefoodT1Transform, attachbase.transform.GetChild(0), itemnames[j]);
                     Transform cptrans = attachcopy.transform;
@@ -346,7 +700,7 @@ namespace AllTameable
             {
                 GameObject itemBaseFreeze = Jotunn.Managers.PrefabManager.Instance.GetPrefab("FreezeGland");
                 GameObject clone = Jotunn.Managers.PrefabManager.Instance.CreateClonedPrefab("FreezeGland" + "_at", itemBaseFreeze);
-                DBG.blogDebug("added FreezeGland_at as a prefab");
+                //DBG.blogDebug("added FreezeGland_at as a prefab");
                 var attachbase = clone.GetComponent<Transform>().Find("attach");
                 var attachcopy = AttachChild(tamefoodT1Transform, attachbase.transform.GetChild(1), "FreezeGland");
 
@@ -360,7 +714,7 @@ namespace AllTameable
 
                 for (int i = 0; i < attachcopy.childCount; i++)
                 {
-                    DBG.blogDebug("child#" + i + "=" + attachcopy.transform.GetChild(i).name);
+                    //DBG.blogDebug("child#" + i + "=" + attachcopy.transform.GetChild(i).name);
                     Light lightToDestroy = attachcopy.transform.GetChild(i).GetComponent<Light>();
                     if (lightToDestroy != null) { lightToDestroy.transform.parent = null; }
                 }
@@ -370,11 +724,11 @@ namespace AllTameable
                 Debug.LogWarning("Food Failed to add FreezeGland");
             }
 
-            DBG.blogDebug("tamefoodT1Transform.GetChild(0).childCount=" + tamefoodT1Transform.childCount);
-            DBG.blogDebug("tamefoodT1Transform.name=" + tamefoodT1Transform.name);
+            //DBG.blogDebug("tamefoodT1Transform.GetChild(0).childCount=" + tamefoodT1Transform.childCount);
+            //DBG.blogDebug("tamefoodT1Transform.name=" + tamefoodT1Transform.name);
             for (int i = 0; i < tamefoodT1Transform.childCount; i++)
             {
-                DBG.blogDebug("child#" + i + "=" + tamefoodT1Transform.GetChild(i).name);
+                //DBG.blogDebug("child#" + i + "=" + tamefoodT1Transform.GetChild(i).name);
                 Light lightTochange = tamefoodT1Transform.GetChild(i).GetComponent<Light>();
                 if (lightTochange != null)
                 {
@@ -429,12 +783,16 @@ namespace AllTameable
         public static Transform AttachChild(Transform trans, Transform attachbase, string name)
         {
             //var attachbase = clone.GetComponent<Transform>().Find("attach");
-            attachbase.name = attachbase.name + "_at";
+            attachbase.name = name + "_at";
             var attachcopy = CopyIntoParent(attachbase, trans);
             var Lod = attachcopy.GetComponent<LODGroup>();
             if (Lod != null) { Destroy(Lod); }
             Lod = attachcopy.GetComponentInChildren<LODGroup>();
             if (Lod != null) { Destroy(Lod); }
+            var ZSync = attachcopy.GetComponent<ZSyncTransform>();
+            if (ZSync != null) { Destroy(ZSync); }
+            ZSync = attachcopy.GetComponentInChildren<ZSyncTransform>();
+            if (ZSync != null) { Destroy(ZSync); }
             return attachcopy;
         }
 
@@ -446,6 +804,7 @@ namespace AllTameable
             CompCopy.transform.localPosition = new Vector3(0, 0, 0);
             return CompCopy;
         }
+        /*
         public static void RecipeReg()
         {
             CustomRecipe tamingstickRecipe = new CustomRecipe(new RecipeConfig()
@@ -461,6 +820,7 @@ namespace AllTameable
             });
             ItemManager.Instance.AddRecipe(tamingstickRecipe);
         }
+        */
 
         
         private void EffectReg()
