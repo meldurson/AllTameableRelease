@@ -17,7 +17,7 @@ using Jotunn.Managers;
 
 namespace AllTameable
 {
-    [BepInPlugin("meldurson.valheim.AllTameable", "AllTameable-Overhaul", "1.2.2")]
+    [BepInPlugin("meldurson.valheim.AllTameable", "AllTameable-Overhaul", "1.2.3")]
 
     [BepInDependency("com.jotunn.jotunn", BepInDependency.DependencyFlags.HardDependency)]
     [BepInDependency("org.bepinex.plugins.creaturelevelcontrol", BepInDependency.DependencyFlags.SoftDependency)]
@@ -50,6 +50,7 @@ namespace AllTameable
             public float size { get; set; } = 1f;
             public bool offspringOnly { get; set; } = false;
             public string group { get; set; } = "";
+            public string eggValue { get; set; } = "";
             public object Clone()
             {
                 return MemberwiseClone();
@@ -253,7 +254,7 @@ namespace AllTameable
 
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode) // Tries to initialise tames as late as possible before game loaded as to allow for mods to add their creatures
         {
-            //DBG.blogWarning("in on scene loaded");
+            //DBG.blogDebug("in on scene loaded");
             if (scene.name == "main")
             {
                 DBG.blogDebug("In main Load");
@@ -474,16 +475,109 @@ namespace AllTameable
           
         }
 
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(EggGrow), "GetHoverText")]
-        //private static class Patch_Tameable_Tame
-        //{
-        private static void Postfix(EggGrow __instance, string __result) //changes the faction based on config
+
+        /*
+        private static bool Configured = false;
+
+
+        [HarmonyPatch(typeof(ObjectDB), nameof(ObjectDB.Awake))]
+        [HarmonyPriority(Priority.Low)]
+        private static void Postfix(ObjectDB __instance)
         {
-            DBG.blogDebug("EggHover=" + __result);
+            return;
+            odb = __instance;
+            DBG.blogDebug("odb set");
+            return;
+            if (!Configured && SceneManager.GetActiveScene().name.Equals("main"))
+            {
+                DBG.blogDebug("replacingEgg");
+                var egg = __instance.GetItemPrefab("DragonEgg".GetStableHashCode());
+                // Make your new thing from the existing
+                PetManager.newDragonEgg();
+                var newthing = PetManager.DragonEgg;
+
+                // Remove old thing from the list then add yours
+                for (int lcv = 0; lcv < __instance.m_items.Count; lcv++)
+                {
+                    if (__instance.m_items[lcv].name == "DragonEgg")
+                    {
+                        //Replace
+                        //__instance.m_items[lcv].name = "DragonEgg_old";
+                        __instance.m_items[lcv] = newthing;
+                        PetManager.newEggHash = __instance.m_items[lcv].name.GetStableHashCode();
+                        DBG.blogDebug("name is "+__instance.m_items[lcv].name);
+                        //__instance.m_items[lcv].name = "DragonEgg";
+                        // maybe have to call UpdateItemHashes() now or manually update that list too
+                    }
+                }
+                __instance.UpdateItemHashes();
+                Configured = true;
+            }
         }
 
+        private static ObjectDB odb;
 
+        [HarmonyPatch(typeof(ZNetScene), nameof(ZNetScene.Awake))]
+        [HarmonyPriority(Priority.Low)]
+        private static void Postfix(ZNetScene __instance)
+        {
+            return;
+            PetManager.MoveItemDrop();
+            return;
+            PetManager.newDragonEgg();
+            GameObject oldEgg = __instance.m_namedPrefabs["DragonEgg".GetStableHashCode()];
+            __instance.m_namedPrefabs.Remove("DragonEgg".GetStableHashCode());
+            oldEgg.name = "DragonEgg_old";
+            __instance.m_namedPrefabs.Add("DragonEgg".GetStableHashCode(), PetManager.DragonEgg);
+            PetManager.newEggHash = "DragonEgg".GetStableHashCode();
+            DBG.blogDebug("replaced in ZNetScene");
+            //return;
+            if (!Configured && SceneManager.GetActiveScene().name.Equals("main"))
+            {
+                DBG.blogDebug("replacingEgg1");
+                var egg = odb.GetItemPrefab("DragonEgg_old".GetStableHashCode());
+                // Make your new thing from the existing
+                //PetManager.newDragonEgg();
+                var newthing = PetManager.DragonEgg;
+
+                // Remove old thing from the list then add yours
+                for (int lcv = 0; lcv < odb.m_items.Count; lcv++)
+                {
+                    if (odb.m_items[lcv].name == "DragonEgg_old")
+                    {
+                        //Replace
+                        //__instance.m_items[lcv].name = "DragonEgg_old";
+                        DBG.blogDebug("prename is " + odb.m_items[lcv].name);
+                        odb.m_items[lcv] = newthing;
+                        DBG.blogDebug("postname is " + odb.m_items[lcv].name);
+                        //__instance.m_items[lcv].name = "DragonEgg";
+                        // maybe have to call UpdateItemHashes() now or manually update that list too
+                    }
+                }
+                odb.UpdateItemHashes();
+                Configured = true;
+            }
+        }
+        
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(ItemDrop), "Awake")]
+        //private static class Prefix_Player_SetLocalPlayer
+        //{
+        private static void ItemDrop_Postfix(ItemDrop __instance)
+        {
+            if(__instance.gameObject.name == "DragonEgg(Clone)")
+            {
+                DBG.blogDebug("in idrop awake");
+                DBG.blogDebug("DragonEgg has egggrow= " + (bool)__instance.m_itemData.m_dropPrefab.GetComponent<EggGrow>());
+            }
+            __instance.gameObject.AddComponent<CLLC.ProcreationInfo>();
+
+        }
+        */
+
+
+        
 
 
 
@@ -598,7 +692,7 @@ namespace AllTameable
         {
             logger = base.Logger;
             nexusID = base.Config.Bind("Nexus", "NexusID", 1571, "Nexus mod ID for updates");
-            HatchingTime = base.Config.Bind("2:DragonEgg", "hatching time", 300, new ConfigDescription("how long will egg become a drake", null, new ConfigurationManagerAttributes { IsAdminOnly = true }));
+            HatchingTime = base.Config.Bind("2:DragonEgg", "hatching time", 1500, new ConfigDescription("how long will egg become a drake", null, new ConfigurationManagerAttributes { IsAdminOnly = true }));
             //HatchingTimeSync = base.Config.Bind("2DragonEgg", "hatching time Server", 300,new ConfigDescription("how long will egg become a drake", null,new ConfigurationManagerAttributes { IsAdminOnly = true }));
             HatchingEgg = base.Config.Bind("2:DragonEgg", "enable egg hatching", defaultValue: true, new ConfigDescription("this alse enable tamed drake spawn eggs", null, new ConfigurationManagerAttributes { IsAdminOnly = true }));
             //cfg = base.Config.Bind("1General", "Settings", ""
@@ -609,10 +703,10 @@ namespace AllTameable
             UseSimple = base.Config.Bind("1:General", "useSimpleFeatures", defaultValue: false,
                 new ConfigDescription("Choose whether to reduce the features to only allow for the taming of extra creatures although no complex procreation behavior", null, new ConfigurationManagerAttributes { IsAdminOnly = true }));
             debugout = base.Config.Bind("1:General", "Debug Output", defaultValue: false, "Determines if debug is output to bepinex log");
-            UseCLLC_Config = base.Config.Bind("2:DragonEgg", "Use CLLC Level", defaultValue: true,
-                new ConfigDescription("Determines if you want to attempt to use CLLC to determine the level of your hatchling", null, new ConfigurationManagerAttributes { IsAdminOnly = true }));
-            LvlProb = base.Config.Bind("2:DragonEgg", "Hatchling Level Probabilities", "75,25,5",
-                new ConfigDescription("List of the probabilities for a hatchling to spawn at a specific level ex: 75,25,5 will have a 75% chance to have 0 stars, 25% to have 1, and 5% to have two", null, new ConfigurationManagerAttributes { IsAdminOnly = true }));
+            //UseCLLC_Config = base.Config.Bind("2:DragonEgg", "Use CLLC Level", defaultValue: true,
+            //    new ConfigDescription("Determines if you want to attempt to use CLLC to determine the level of your hatchling", null, new ConfigurationManagerAttributes { IsAdminOnly = true }));
+            //LvlProb = base.Config.Bind("2:DragonEgg", "Hatchling Level Probabilities", "75,25,5",
+            //    new ConfigDescription("List of the probabilities for a hatchling to spawn at a specific level ex: 75,25,5 will have a 75% chance to have 0 stars, 25% to have 1, and 5% to have two", null, new ConfigurationManagerAttributes { IsAdminOnly = true }));
             MutationChanceLvl = base.Config.Bind("3:Custom Procreation", "Mutation Chance for Level", 5,
                 new ConfigDescription("Determines chance of a mutation occuring in the level, 0 has no chance, 100 will always mutate. Range of mutation is the levels of the parents +-1. Does NOT require CLLC", null, new ConfigurationManagerAttributes { IsAdminOnly = true }));
             UseCustomProcreation = base.Config.Bind("3:Custom Procreation", "Is Custom Procreation Enabled", defaultValue: true,
@@ -627,7 +721,7 @@ namespace AllTameable
                 new ConfigDescription("Determines if you want to have tames heal a set amount on consume(pre H&H), or leave default with only regen occurring when not hungry ", null, new ConfigurationManagerAttributes { IsAdminOnly = true }));
             OverrideHealValue = base.Config.Bind("1:General", "UseListHealValues", defaultValue: true,
                 new ConfigDescription("Determines if you want to use the consumeheal values from the TameList, if set to false will heal 10% of max health when consuming", null, new ConfigurationManagerAttributes { IsAdminOnly = true }));
-            TamedFedMultiplier = base.Config.Bind("1:General", "TamedFedMultiplier", defaultValue: 1f,
+            TamedFedMultiplier = base.Config.Bind("1:General", "TamedFedMultiplier", defaultValue: 4f,
                 new ConfigDescription("Determines if after being tamed how much longer the creature will stay fed", null, new ConfigurationManagerAttributes { IsAdminOnly = true }));
             CommandKey = base.Config.Bind("4:Mass Commands", "Command Key", defaultValue: "G",
                 "What key will be used when interacting to command multiple in the area, can be any single key");
@@ -648,7 +742,7 @@ namespace AllTameable
 
             SceneManager.sceneLoaded += OnSceneLoaded;
             UnityEngine.Object.DontDestroyOnLoad(Root);
-            if (UseCLLC_Config.Value)
+            if (UseCustomProcreation.Value)
             {
                 try
                 {
@@ -672,7 +766,6 @@ namespace AllTameable
             //applyPatches();
 
 
-            
             //clientInit();
             DBG.blogInfo("AllTameable Loaded");
             Jotunn.Managers.PrefabManager.OnVanillaPrefabsAvailable += PrefabManager.ItemReg;
@@ -771,6 +864,8 @@ namespace AllTameable
                 DBG.blogDebug("Patched InterceptProcreation");
                 harmony.PatchAll(typeof(global::AllTameable.CLLC.CLLCPatches.InterceptGrowup));
                 DBG.blogDebug("Patched InterceptGrowup");
+                harmony.PatchAll(typeof(global::AllTameable.CLLC.CLLCPatches.InterceptEggGrowup));
+                DBG.blogDebug("Patched InterceptEggGrowup");
             }
         }
 

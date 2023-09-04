@@ -1,7 +1,87 @@
 ﻿## name,commandable,tamingTime,fedDuration,consumeRange,consumeSearchInterval,consumeHeal,consumeSearchRange,consumeItems,changeFaction,procretion,maxCreatures,pregnancyChance,pregnancyDuration,growTime
 
+####Any line starting with a # will be skipped from calculating into the tamelist
 
-#Any line starting with a # will be skipped from calculating into the tamelist
+*Default,true,1500,300,1.4,10,30,15,Raspberry:Blueberries:Carrot:Turnip:Mushroom:Cloudberry:OnionSoup:Onion,false,true,7,0.66,90,2000,canMateWithSelf=true
+Boar
+*Tier_1,true,1500,300,1.4,10,30,15,Raspberry:Blueberries:Carrot:Turnip:Mushroom:Cloudberry:OnionSoup:Onion,false,true,7,0.66,90,2000
+Deer
+Greyling,consumeItems=SerpentMeatCooked:NeckTailGrilled:CookedMeat:CookedLoxMeat:Bread:Raspberry:Blueberries:Carrot:Turnip:Mushroom:Cloudberry:Honey:Mushroom:MushroomYellow:MushroomBlue:MinceMeatSauce:DeerStew:CookedDeerMeat:BoarJerky:BlackSoup:WolfMeatSkewer:WolfJerky:CookedWolfMeat:OnionSoup:Onion:CookedHareMeat
+Neck,consumeItems=SerpentMeat:FishRaw:Bread:Raspberry:Blueberries:Cloudberry:Carrot:Mushroom:MushroomYellow:MushroomBlue:Turnip,egg=drake(1200:#00FF00:0.3)
+Bat
+#
+*Tier_2,true,1600,300,1.4,10,30,15,SerpentMeat:RawMeat:NeckTail:FishRaw:LoxMeat:DeerMeat:WolfMeat:HareMeat,false,true,7,0.66,100,2300
+Greydwarf,consumeItems=SerpentMeatCooked:NeckTailGrilled:CookedMeat:CookedLoxMeat:Bread:Raspberry:Blueberries:Carrot:Turnip:Mushroom:Cloudberry:Honey:Mushroom:MushroomYellow:MushroomBlue:MinceMeatSauce:DeerStew:CookedDeerMeat:BoarJerky:BlackSoup:WolfMeatSkewer:WolfJerky:CookedWolfMeat:OnionSoup:Onion:CookedHareMeat
+Skeleton,canMateWithSelf=false,group=skeleton
+Surtling,consumeItems=Coal:ElderBark
+#
+*Tier_3,true,1700,300,1.7,10,30,15,SerpentMeat:RawMeat:NeckTail:FishRaw:LoxMeat:DeerMeat:WolfMeat:HareMeat,false,true,7,0.66,110,2600
+Blob
+Draugr
+Skeleton_Poison,group=skeleton
+Skeleton_Poison:Skeleton
+Ghost
+Greydwarf_Shaman,consumeItems=SerpentMeatCooked:NeckTailGrilled:CookedMeat:CookedLoxMeat:Bread:Raspberry:Blueberries:Carrot:Turnip:Mushroom:Cloudberry:Honey:Mushroom:MushroomYellow:MushroomBlue:MinceMeatSauce:DeerStew:CookedDeerMeat:BoarJerky:BlackSoup:WolfMeatSkewer:WolfJerky:CookedWolfMeat:OnionSoup:Onion:CookedHareMeat
+Leech,consumeItems=Bloodbag:SerpentMeat:RawMeat:NeckTail:FishRaw:LoxMeat:DeerMeat:WolfMeat:HareMeat,egg=chicken(1200:#B10000:1.5)
+Serpent,true,1800,300,4,10,30,20,SerpentMeat:RawMeat:NeckTail:FishRaw:LoxMeat:DeerMeat:WolfMeat:HareMeat,false,true,4,size=2,egg=chicken(1500:#00B1B1:2)
+Wraith
+BlobElite,,1800,maxCreatures=6
+Greydwarf_Elite,,1800,,,,,,SerpentMeatCooked:NeckTailGrilled:CookedMeat:CookedLoxMeat:Bread:Raspberry:Blueberries:Carrot:Turnip:Mushroom:Cloudberry:Honey:Mushroom:MushroomYellow:MushroomBlue:MinceMeatSauce:DeerStew:CookedDeerMeat:BoarJerky:BlackSoup:WolfMeatSkewer:WolfJerky:CookedWolfMeat:OnionSoup:Onion:CookedHareMeat,false,true,6
+#
+*Tier_4,true,2000,300,1.6,10,30,15,SerpentMeat:RawMeat:NeckTail:FishRaw:LoxMeat:DeerMeat:WolfMeat:HareMeat,false,true,7,0.66,120,2900
+Deathsquito,,,,,,,,Bloodbag:SerpentMeat:RawMeat:NeckTail:FishRaw:DeerMeat:WolfMeat:HareMeat,,,15,,80,400,egg=chicken(800:#D8DF00:0.6)
+Draugr_Elite
+Abomination,true,2300,300,5,10,30,20,SerpentMeat:RawMeat:NeckTail:FishRaw:LoxMeat:DeerMeat:WolfMeat:HareMeat,true,false,4,0.66,200,4000,size=3
+Fenring
+Goblin,,,500,,,90,15,SerpentMeatCooked:CookedLoxMeat:BloodPudding:FishWraps:LoxPie:TurnipStew:SerpentStew:BlackSoup:WolfMeatSkewer:WolfJerky:CookedWolfMeat:CookedHareMeat,true
+Hatchling,consumeItems=CookedMeat:CookedLoxMeat:Sausages:NeckTailGrilled:SerpentMeatCooked:FishCooked:CookedDeerMeat:BoarJerky:WolfJerky:CookedWolfMeat:CookedHareMeat
+Lox,true,2000,150,3,10,30,20,Barley:Cloudberry:Flax:Onion,false,true,6,0.66,150,4500,size=2
+Troll,,,,3,,,20,SerpentMeat:RawMeat:NeckTail:FishRaw:LoxMeat:Sausages:CookedMeat:CookedLoxMeat:Sausages:NeckTailGrilled:SerpentMeatCooked:Honey:DeerMeat:WolfMeat:CookedDeerMeat:BoarJerky:WolfJerky:CookedWolfMeat:CookedHareMeat,false,true,4,0.66,200,4500,size=2
+Wolf
+BlobTar,true,2200,maxCreatures=5
+
+#
+*T2_Goblins,true,2300,500,2,10,90,15,SerpentMeatCooked:CookedLoxMeat:BloodPudding:FishWraps:LoxPie:TurnipStew:SerpentStew:BlackSoup:WolfMeatSkewer:WolfJerky:CookedWolfMeat:CookedHareMeat,true,false,5,0.66,200,3200
+GoblinBrute
+GoblinShaman
+StoneGolem,true,2300,300,2,10,30,20,CopperOre:IronOre:SilverOre:TinOre:Ruby,true,false,6,0.66,200,3200
+#
+Dverger,true,2200,450,1.4,10,30,15,MushroomOmelette:MisthareSupreme:FishAndBread:HoneyGlazedChicken:MeatPlatter:Salad,false,true,6,0.66,160,3200
+*DvergerMages,true,2400,450,1.4,10,30,15,MagicallyStuffedShroom:YggdrasilPorridge:SeekerAspic,false,true,6,0.66,160,3400
+DvergerMage
+DvergerMageFire
+DvergerMageIce
+DvergerMageSupport
+Dverger:DvergerMage:DvergerMageFire:DvergerMageIce:DvergerMageSupport
+#
+Seeker,true,2400,250,2.5,10,30,20,Sap:HareMeat:CookedHareMeat:ChickenMeat:CookedChickenMeat:RoyalJelly,false,true,7,0.66,200,1800,egg=drake(1600:#AE00A9:0.6)
+SeekerBrute,true,2700,250,3,10,30,20,Sap:HareMeat:CookedHareMeat:ChickenMeat:CookedChickenMeat:RoyalJelly,false,true,5,0.66,200,1800,egg=drake(1800:#7D0079:0.8)
+#SeekerBrood,true,1500,300,1.4,10,30,15,Sap:HareMeat:CookedHareMeat:ChickenMeat:CookedChickenMeat:RoyalJelly,false,true,10,0.66,90,2000
+Seeker:SeekerBrute
+#
+#Gjall,true,2700,300,4,10,30,20,BugMeat:CookedBugMeat:HareMeat:CookedHareMeat:Bloodbag:Entrails,false,true,4,0.66,200,2400,egg=chicken(3500:#2C0800:6),specificOffspring=Gjall(Tick:95)
+Tick,true,2100,150,1.5,10,30,15,BugMeat:CookedBugMeat:HareMeat:CookedHareMeat:Bloodbag:Entrails,false,true,10,0.66,150,1000,egg=chicken(1400:#E38600:3)
+#
+*Ulvs,true,2200,300,2,10,30,15,SerpentMeat:RawMeat:NeckTail:FishRaw:Sausages:DeerMeat:WolfMeat,false,true,6,0.66,120,3200
+Ulv
+Fenring_Cultist
+#
+Hare,true,2000,300,1.6,10,30,15,Carrot:Turnip:Mushroom:Cloudberry,false,true,7,0.66,60,2200
+#Hen,true,1500,200,1.4,10,30,10,CarrotSeeds:OnionSeeds:TurnipSeeds:BeechSeeds:BirchSeeds,false,true,15,0.66,60,2500
+
+##Bosses
+#Eikthyr,true,1700,200,5,10,30,30,Raspberry:Blueberries:Carrot:Turnip:Mushroom:Cloudberry:Onion:Honey:Barley:Bread,true,false,4,0.66,150,4000
+Eikthyr,-1
+#gd_king,true,2000,200,5,10,30,30,CookedMeat:CookedLoxMeat:Sausages:NeckTailGrilled:SerpentMeatCooked:FishCooked:CookedDeerMeat:BoarJerky:WolfJerky:CookedWolfMeat,true,false,4,0.66,150,4000
+gd_king,-1
+#Bonemass,true,2300,200,5,10,30,30,SerpentMeat:RawMeat:NeckTail:FishRaw:LoxMeat:DeerMeat:WolfMeat:HareMeat,true,false,4,0.66,150,4000
+Bonemass,-1
+#Dragon,true,2500,200,5,10,30,30,RawMeat:LoxMeat:CookedMeat:CookedLoxMeat:Sausages:WolfMeat:WolfJerky:HareMeat:CookedHareMeat,true,false,4,0.66,150,4000
+Dragon,-1
+#GoblinKing,true,2700,100,5,10,30,30,CookedMeat:CookedLoxMeat:Sausages:NeckTailGrilled:SerpentMeatCooked:FishCooked:Bread:CookedDeerMeat:BoarJerky:WolfJerky:CookedWolfMeat:CookedHareMeat,true,false,4,0.66,200,4000
+GoblinKing,-1
+#SeekerQueen,true,2900,200,5,10,30,30,Sap:HareMeat:CookedHareMeat:ChickenMeat:CookedChickenMeat:RoyalJelly,true,false,4,0.66,200,2500,egg=drake(2400:#7D00B0:2)
+SeekerQueen,-1
 
 #Starting a line with a '*' will then set all atributes in that as the default going forward allowing to only specify attributes you change,
 #	You can specify a new default at any time by starting a new line with '*' as shown below
@@ -11,110 +91,48 @@
 #		example: Surtling,consumeItems=Coal:ElderBark
 #	This will use all the default values except for consumeItems
 
-#custom options:
-#	canMateWithSelf: default=true, options:true,false
+##custom options:##
+###	canMateWithSelf: default=true, options:true,false
 #		makes it so can only mate with other creatures that have been specified and not creatures with the same prefab
 # 		in this file Skeletons cannot mate with themselves and can only mate with Skeleton_Poison
-
-#	size: default=1, options:0.5-4
+###	size: default=1, options:1-4
 #		multiplier to determine how far away it checks for other creatures, most creatures you will not have to change.
 #		Lox should be at least 2, Vanilla Bosses should be 3, 4 is only if it is massive!
-#		You can use decimals and specify a smaller range if you choose such as 0.5 for a small creature such as a hen
-
-#	group: default=none
+###	group: default=none
 #		Groups are used to determine if mobs will be hostile towards eachother, if two mobs have the same group then 
 #		if one is tamed and the other wild they will still not attack eachother
 #		group can equal whatever name you want for example, if you add name=AllGoblin
 #		to all of the goblins they will not attack eachother if one is tamed and the other is wild
-#		this file by default has Skeleton and Skeleton_Poison in the same group ( group=skeleton )
-
-#	specificOffspring: default=none, specify in the form Mate(offspring1:chance1/offspring2:chance2/...)
+###	specificOffspring: default=none, specify in the form Mate(offspring1:chance1/offspring2:chance2/...)
 #		The following will make it so can only breed Goblins when breeding GoblinShaman and GoblinBrute with an 80% chance
 #		and when breeding two GoblinShaman there is a 70% chance to get a GoblinBrute and 30% to get a GoblinShaman
-#		if your percentages do not add up to 100% the remaining amount will be filled in by the base creature such
-#		as the 10% for GoblinShaman with a GoblinBrute and 30% for GoblinShaman with another GoblinShaman 
+#Goblin,-1
+#*GoblinElites,true,2300,250,2,10,90,20,SerpentMeatCooked:CookedLoxMeat:CarrotSoup:BloodPudding:FishWraps:LoxPie:TurnipStew:SerpentStew:BlackSoup:WolfMeatSkewer:WolfJerky:CookedWolfMeat:CookedHareMeat,true,true,6,0.66,200,600
+#GoblinShaman,specificOffspring=GoblinBrute(Goblin:80/GoblinBrute:10),specificOffspring=GoblinShaman(GoblinBrute:70)
+#GoblinBrute
+#GoblinShaman:GoblinBrute
 #
-#			Goblin,-1
-#			*GoblinElites,true,2300,250,2,10,90,20,SerpentMeatCooked:CookedLoxMeat:CarrotSoup:BloodPudding:FishWraps:LoxPie:TurnipStew:SerpentStew:BlackSoup:WolfMeatSkewer:WolfJerky:CookedWolfMeat:CookedHareMeat,true,true,6,0.66,200,600
-#			GoblinShaman,specificOffspring=GoblinBrute(Goblin:80/GoblinBrute:10),specificOffspring=GoblinShaman(GoblinBrute:70)
-#			GoblinBrute
-#			GoblinShaman:GoblinBrute
+###	egg=drake/chicken(hatchtime:color:size),  default(1800:default:1)
+#		Have the creature lay an egg that will hatch into a mini version
+#		choose which egg to copy, how long it will take to hatch when near a fire, if you want to change the color, if you want to change the size
+#		by default you do not need to specify anything other than the egg type such as egg=drake
+#		the color is specified as a hex code such as #FFFFFF for white or #FF0000 for red
+#		an example would be the following which would have necks lay a smaller version of the dragon egg
+#		with a color of green and a hatch time of 20 minutes
+#Neck,egg=drake(1200:#00FF00:0.3)
 
-
-*Default,true,900,150,2,10,30,20,Raspberry:Blueberries:Carrot:Turnip:Mushroom:Cloudberry:OnionSoup:Onion,false,true,10,0.66,150,300,canMateWithSelf=true
-Boar
-*Tier_1,true,900,150,2,10,30,20,Raspberry:Blueberries:Carrot:Turnip:Mushroom:Cloudberry:OnionSoup:Onion,false,true,10,0.66,150,300
-Deer
-Greyling,consumeItems=SerpentMeatCooked:NeckTailGrilled:CookedMeat:CookedLoxMeat:Bread:Raspberry:Blueberries:Carrot:Turnip:Mushroom:Cloudberry:Honey:Mushroom:MushroomYellow:MushroomBlue:MinceMeatSauce:DeerStew:CookedDeerMeat:BoarJerky:BlackSoup:WolfMeatSkewer:WolfJerky:CookedWolfMeat:OnionSoup:Onion:CookedHareMeat
-Neck,consumeItems=SerpentMeat:FishRaw:Bread:Raspberry:Blueberries:Cloudberry:Carrot:Mushroom:MushroomYellow:MushroomBlue:Turnip
-#
-*Tier_2,true,1200,90,2,10,30,20,SerpentMeat:RawMeat:NeckTail:FishRaw:LoxMeat:DeerMeat:WolfMeat:HareMeat,false,true,10,0.66,150,400
-Greydwarf,consumeItems=SerpentMeatCooked:NeckTailGrilled:CookedMeat:CookedLoxMeat:Bread:Raspberry:Blueberries:Carrot:Turnip:Mushroom:Cloudberry:Honey:Mushroom:MushroomYellow:MushroomBlue:MinceMeatSauce:DeerStew:CookedDeerMeat:BoarJerky:BlackSoup:WolfMeatSkewer:WolfJerky:CookedWolfMeat:OnionSoup:Onion:CookedHareMeat
-Skeleton,canMateWithSelf=false,group=skeleton
-Surtling,consumeItems=Coal:ElderBark
-#
-*Tier_3,true,1600,60,2,10,30,20,SerpentMeat:RawMeat:NeckTail:FishRaw:LoxMeat:DeerMeat:WolfMeat:HareMeat,false,true,10,0.66,150,450
-Blob
-Draugr
-Skeleton_Poison,group=skeleton
-Skeleton_Poison:Skeleton
-Ghost
-Greydwarf_Shaman,consumeItems=SerpentMeatCooked:NeckTailGrilled:CookedMeat:CookedLoxMeat:Bread:Raspberry:Blueberries:Carrot:Turnip:Mushroom:Cloudberry:Honey:Mushroom:MushroomYellow:MushroomBlue:MinceMeatSauce:DeerStew:CookedDeerMeat:BoarJerky:BlackSoup:WolfMeatSkewer:WolfJerky:CookedWolfMeat:OnionSoup:Onion:CookedHareMeat
-Leech,consumeItems=Bloodbag:SerpentMeat:RawMeat:NeckTail:FishRaw:LoxMeat:DeerMeat:WolfMeat:HareMeat
-Serpent,true,1600,90,5,10,30,30,SerpentMeat:RawMeat:NeckTail:FishRaw:LoxMeat:DeerMeat:WolfMeat:HareMeat,true,false,4
-Wraith
-BlobElite,,1800,maxCreatures=6
-Greydwarf_Elite,,1800,,,,,,SerpentMeatCooked:NeckTailGrilled:CookedMeat:CookedLoxMeat:Bread:Raspberry:Blueberries:Carrot:Turnip:Mushroom:Cloudberry:Honey:Mushroom:MushroomYellow:MushroomBlue:MinceMeatSauce:DeerStew:CookedDeerMeat:BoarJerky:BlackSoup:WolfMeatSkewer:WolfJerky:CookedWolfMeat:OnionSoup:Onion:CookedHareMeat,false,true,6
-#
-*Tier_4,true,2000,90,2,10,30,20,SerpentMeat:RawMeat:NeckTail:FishRaw:LoxMeat:DeerMeat:WolfMeat:HareMeat,false,true,10,0.66,150,500
-Deathsquito,,,,,,,,Bloodbag:SerpentMeat:RawMeat:NeckTail:FishRaw:DeerMeat:WolfMeat:HareMeat,,,20,,100,200
-Draugr_Elite
-Abomination,true,2300,90,5,10,30,20,SerpentMeat:RawMeat:NeckTail:FishRaw:LoxMeat:DeerMeat:WolfMeat:HareMeat,true,false,4,0.66,200,600
-Fenring
-Goblin,,,250,,,90,20,SerpentMeatCooked:CookedLoxMeat:CarrotSoup:BloodPudding:FishWraps:LoxPie:TurnipStew:SerpentStew:BlackSoup:WolfMeatSkewer:WolfJerky:CookedWolfMeat:CookedHareMeat,true
-Hatchling,consumeItems=CookedMeat:CookedLoxMeat:Sausages:NeckTailGrilled:SerpentMeatCooked:FishCooked:CookedDeerMeat:BoarJerky:WolfJerky:CookedWolfMeat:CookedHareMeat
-Lox,true,2000,50,3,10,30,20,Barley:Cloudberry:Flax:Onion,false,true,6,0.66,150,600,size=2
-Troll,,,,5,,,,SerpentMeat:RawMeat:NeckTail:FishRaw:LoxMeat:Sausages:CookedMeat:CookedLoxMeat:Sausages:NeckTailGrilled:SerpentMeatCooked:Honey:DeerMeat:WolfMeat:CookedDeerMeat:BoarJerky:WolfJerky:CookedWolfMeat:CookedHareMeat,false,true,4,0.66,150,500
-Wolf
-BlobTar,true,2200,maxCreatures=6
-
-#
-GoblinBrute,true,2300,250,2,10,30,20,SerpentMeatCooked:CookedLoxMeat:CarrotSoup:BloodPudding:FishWraps:LoxPie:TurnipStew:SerpentStew:BlackSoup:WolfMeatSkewer:WolfJerky:CookedWolfMeat:CookedHareMeat,true,false,6,0.66,200,600
-GoblinShaman,true,2300,250,2,10,30,20,SerpentMeatCooked:CookedLoxMeat:CarrotSoup:BloodPudding:FishWraps:LoxPie:TurnipStew:SerpentStew:BlackSoup:WolfMeatSkewer:WolfJerky:CookedWolfMeat:CookedHareMeat,true,false,6,0.66,200,600
-StoneGolem,true,2300,60,2,10,30,20,Obsidian:CopperOre:IronOre:SilverOre:TinOre:Ruby,true,false,6,0.66,200,600
-#
-Dverger,true,2200,250,2,10,30,20,MushroomOmelette:MisthareSupreme:FishAndBread:HoneyGlazedChicken:MeatPlatter:Salad,false,true,6,0.66,200,600
-*DvergerMages,true,2400,250,2,10,30,20,MagicallyStuffedShroom:YggdrasilPorridge:SeekerAspic,false,true,6,0.66,200,600
-DvergerMage
-DvergerMageFire
-DvergerMageIce
-DvergerMageSupport
-Dverger:DvergerMage:DvergerMageFire:DvergerMageIce:DvergerMageSupport
-#
-Seeker,true,2400,90,2,10,30,20,Sap:HareMeat:CookedHareMeat:ChickenMeat:CookedChickenMeat:RoyalJelly,false,true,10,0.66,200,600
-SeekerBrute,true,2700,60,2,10,30,20,Sap:HareMeat:CookedHareMeat:ChickenMeat:CookedChickenMeat:RoyalJelly,false,true,6,0.66,200,700
-#SeekerBrood,true,1000,90,2,10,30,20,Sap:HareMeat:CookedHareMeat:ChickenMeat:CookedChickenMeat:RoyalJelly,false,true,10,0.66,150,400
-Seeker:SeekerBrute
-#
-Gjall,true,2400,250,2,10,30,20,BugMeat:CookedBugMeat:HareMeat:CookedHareMeat:Bloodbag:Entrails,true,false,6,0.66,200,600
-Tick,true,1600,60,2,10,30,20,BugMeat:CookedBugMeat:HareMeat:CookedHareMeat:Bloodbag:Entrails,false,true,10,0.66,150,450
-#
-Bat,true,800,150,2,10,30,20,Raspberry:Blueberries:Carrot:Turnip:Mushroom:Cloudberry:Onion,false,true,10,0.66,100,300
-Ulv,true,2000,90,2,10,30,20,SerpentMeat:RawMeat:NeckTail:FishRaw:Sausages:DeerMeat:WolfMeat,false,true,10,0.66,150,500
-Fenring_Cultist,true,2000,90,2,10,30,20,SerpentMeat:RawMeat:NeckTail:FishRaw:Sausages:DeerMeat:WolfMeat,false,true,10,0.66,150,500
-#
-Hare,true,600,150,2,10,30,20,Carrot:Turnip:Mushroom:Cloudberry,false,true,15,0.66,45,250
-#Chicken,-1
-#Hen,true,50,150,2,10,30,20,carrotseeds:onionseeds:turnipseeds:beechseeds:birchseeds,false,true,15,0.66,150,300
-
-##Bosses
-#Eikthyr,true,1200,60,5,10,30,30,Raspberry:Blueberries:Carrot:Turnip:Mushroom:Cloudberry:Onion:Honey:Barley:Bread,true,false,4,0.66,150,450
-Eikthyr,-1
-#gd_king,true,1500,60,5,10,30,30,CookedMeat:CookedLoxMeat:Sausages:NeckTailGrilled:SerpentMeatCooked:FishCooked:CookedDeerMeat:BoarJerky:WolfJerky:CookedWolfMeat,true,false,4,0.66,150,500
-gd_king,-1
-#Bonemass,true,1800,60,5,10,30,30,SerpentMeat:RawMeat:NeckTail:FishRaw:LoxMeat:DeerMeat:WolfMeat:HareMeat,true,false,4,0.66,150,600
-Bonemass,-1
-#Dragon,true,2001,60,5,10,30,30,RawMeat:LoxMeat:CookedMeat:CookedLoxMeat:Sausages:WolfMeat:WolfJerky:HareMeat:CookedHareMeat,true,false,4,0.66,150,700
-Dragon,-1
-#GoblinKing,true,2300,36,5,10,30,30,CookedMeat:CookedLoxMeat:Sausages:NeckTailGrilled:SerpentMeatCooked:FishCooked:Bread:CookedDeerMeat:BoarJerky:WolfJerky:CookedWolfMeat:CookedHareMeat,true,false,4,0.66,200,800
-GoblinKing,-1
+##Vanilla Default Values##
+#	commandable:		Boar/Lox/Hen=false, Wolf=true
+#	taming time:		1800 (seconds)
+#	fed duration:		600 (seconds)
+#	consume range:		Boar/Hen=1, Wolf=1.4, Lox=4 (units distance)
+#	consumeSearchInterval:	10 (seconds)
+#	consumeHeal:		N/A (default heal over time, only used if enabled in config)
+#	consumeSearchRange:	10 (units distance)
+#	consumeItems:		many foods
+#	changeFaction:		false
+#	procretion:			true
+#	maxCreatures:		Boar=5, Wolf/Lox=4, Hen=10 (max creatures in area before unable to procreate)
+#	pregnancyChance:	0.33 (out of 1, this is 33% chance)
+#	pregnancyDuration:	Boar/Wolf/Hen=60, Lox=120 (seconds)
+#	growTime:			Boar/Wolf=3000, Lox=6000, Hen=1800 for Egg Hatch + 3000 for Chick to grow up (seconds)

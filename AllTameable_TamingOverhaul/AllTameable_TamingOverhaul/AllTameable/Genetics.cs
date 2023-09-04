@@ -192,8 +192,127 @@ namespace AllTameable.Genetics
         }
 
 
-
         private static void initRandomOffspring(string prefabname, Procreation proc, bool changeOff = false)
+        {
+            if (!Plugin.cfgList.TryGetValue(prefabname, out Plugin.TameTable tmtbl))
+            {
+                return;
+            }
+            DBG.blogDebug("found prefab, " + prefabname);
+            if ((tmtbl.specificOffspringString + "") == "")
+            {
+                DBG.blogDebug("No specific offspring for " + prefabname);
+                return;
+            }
+            //DBG.blogDebug("specificOffspringString=" + cfgfile.specificOffspringString);
+            if (tmtbl.ListofRandomOffspring.Count() == 0)
+            {
+                //List<string[]> partnerList = new List<string[]>();
+                DBG.blogDebug("initOffspring");
+
+                List<specificMates> specMates = new List<specificMates>();
+                Dictionary<string, string> partnersDict = new Dictionary<string, string>();
+                string[] partners = tmtbl.specificOffspringString.Split(',');
+                //DBG.blogDebug(partners.ToString());
+                partners = partners.Skip(1).ToArray();
+                //DBG.blogDebug(partners.ToString());
+                bool hasSpecSameMate = false;
+                foreach (string combinedValue in partners)
+                {
+                    string[] splitValue = combinedValue.Replace(")", "").Split('('); //combinedValue.Replace(")", "").Split('(');
+                    partnersDict.Add(splitValue[0],  string.Join("",splitValue.Skip(1).ToArray()));
+                    //DBG.blogDebug("key=" + partnersDict.Keys + ", value=" + partnersDict.Values);
+                    specificMates addPartner = new specificMates();
+                    addPartner.prefabName = splitValue[0];
+                    if (addPartner.prefabName == prefabname) { hasSpecSameMate = true; }
+                    string[] prefchances = splitValue[1].Split('/');
+                    float totalchance = 0;
+                    foreach (string chancepkg in prefchances)
+                    {
+                        chanceOffspring chanceoff = new chanceOffspring();
+                        string[] pref_and_chance = chancepkg.Split(':');
+                        string prefname = pref_and_chance[0];
+                        GameObject mate_go = ZNetScene.instance.GetPrefab(prefname);
+                        if (mate_go != null)
+                        {
+                            DBG.blogDebug("found go for " + mate_go.name);
+                            //Procreation mate_proc = mate_go.GetComponent<Procreation>();
+
+                            if (mate_go.GetComponent<Growup>() != null)
+                            {
+                                chanceoff.offspring = mate_go;
+                            }
+                            else if (mate_go.GetComponent<Procreation>() != null)
+                            {
+                                chanceoff.offspring = mate_go.GetComponent<Procreation>().m_offspring;
+                                DBG.blogDebug("chanceoff.offspring=" + chanceoff.offspring.name);
+                            }
+                            else
+                            {
+                                Growup this_growup = proc.m_offspring.GetComponent<Growup>();
+                                if (this_growup != null)
+                                {
+                                    chanceoff.offspring = PetManager.SpawnMini(mate_go, this_growup.m_growTime);
+                                }
+                                else
+                                {
+                                    DBG.blogDebug("growup null");
+                                    chanceoff.offspring = PetManager.SpawnMini(mate_go);
+                                }
+
+                                DBG.blogDebug("chanceoff.offspring=" + chanceoff.offspring.name);
+                            }
+                            try { chanceoff.chance = float.Parse(pref_and_chance[1]); }
+                            catch { DBG.blogWarning("Not a valid float for chance for " + proc.name); }
+                            //DBG.blogDebug("chanceoff.chance=" + chanceoff.chance);
+                            totalchance += chanceoff.chance;
+                            addPartner.possibleOffspring.Add(chanceoff);
+                        }
+                        else
+                        {
+                            DBG.blogWarning("could not find prefab:" + prefname + " when trying to mate with " + proc.name);
+                        }
+
+                    }
+                    DBG.blogDebug("totalchance=" + totalchance);
+                    if (totalchance < 100)
+                    {
+                        chanceOffspring defaultOff = new chanceOffspring();
+                        defaultOff.chance = 100 - totalchance;
+                        defaultOff.offspring = proc.m_offspring;
+                        addPartner.possibleOffspring.Add(defaultOff);
+                    }
+                    specMates.Add(addPartner);
+
+                }
+                if (!hasSpecSameMate && tmtbl.canMateWithSelf)
+                {
+                    specificMates addSamePart = new specificMates();
+                    addSamePart.prefabName = prefabname;
+                    chanceOffspring defaultOff = new chanceOffspring();
+                    defaultOff.offspring = proc.m_offspring;
+                    addSamePart.possibleOffspring.Add(defaultOff);
+                    specMates.Add(addSamePart);
+                }
+                tmtbl.ListofRandomOffspring = specMates;
+                foreach (specificMates specmates in tmtbl.ListofRandomOffspring)
+                {
+                    DBG.blogDebug("specmates.prefabName=" + specmates.prefabName);
+                    foreach (chanceOffspring chancepkg in specmates.possibleOffspring)
+                    {
+                        DBG.blogDebug("     chancepkg.offspring.name=" + chancepkg.offspring.name);
+                        DBG.blogDebug("     chancepkg.chance=" + chancepkg.chance);
+                    }
+                }
+            }
+            if (changeOff)
+            {
+                changeOffspring(proc, tmtbl.ListofRandomOffspring);
+            }
+        }
+
+
+        private static void old_initRandomOffspring(string prefabname, Procreation proc, bool changeOff = false)
         {
             if (Plugin.cfgList.TryGetValue(prefabname, out Plugin.TameTable tmtbl))
             {

@@ -37,6 +37,10 @@ namespace AllTameable
             Root.SetActive(value: false);
             tamingAssets = AssetUtils.LoadAssetBundleFromResources("taming_icons", Assembly.GetExecutingAssembly());
         }
+        public static AssetBundle getAssetBundle()
+        {
+            return tamingAssets;
+        }
 
         public static void ItemReg()
         {
@@ -71,14 +75,15 @@ namespace AllTameable
             tamestickConfig.AddRequirement(new RequirementConfig("RawMeat", 1));
             tamestickConfig.AddRequirement(new RequirementConfig("Mushroom", 1));
             tamestickConfig.AddRequirement(new RequirementConfig("Carrot", 1));
-            tamestickConfig.AddRequirement(new RequirementConfig("Resin", 1));
+            tamestickConfig.AddRequirement(new RequirementConfig("DragonEgg", 1));
+            //tamestickConfig.AddRequirement(new RequirementConfig("Resin", 1));
             tamestickConfig.CraftingStation = "piece_workbench";
             tamestickConfig.MinStationLevel = 1;
 
             CustomItem tamestick = new CustomItem(tametoolname, "Club", tamestickConfig);
-            //DBG.blogDebug("Adding TamingStick");
             ItemManager.Instance.AddItem(tamestick);
             Transform tameTransform = Jotunn.Managers.PrefabManager.Instance.GetPrefab(tametoolname).transform.Find("attach").transform;
+
             var id = tamestick.ItemDrop;
             var id2 = id.m_itemData;
             id2.m_shared.m_name = "Taming Tool";
@@ -184,7 +189,7 @@ namespace AllTameable
                         toRemove.gameObject.SetActive(false);
                         //if ((bool)toRemove) { toRemove.parent = null; }
                         if (!(bool)FlakeEffect) { setFlakes(); }
-                        DBG.blogDebug("Set Flakes");
+                        //DBG.blogDebug("Set Flakes");
                         if (!(bool)FlakeEffect)
                         {
                             DBG.blogDebug("Flakes still null");
@@ -231,7 +236,7 @@ namespace AllTameable
                             grad.colorKeys = colKeys;
                             //ParticleSystem.MinMaxGradient minmaxGrad = new ParticleSystem.MinMaxGradient(grad);
                             col.color = new ParticleSystem.MinMaxGradient(grad);
-                            DBG.blogDebug("col.color.gradient.colorKeys[0].color=" + col.color.gradient.colorKeys[0].color);
+                            //DBG.blogDebug("col.color.gradient.colorKeys[0].color=" + col.color.gradient.colorKeys[0].color);
 
                         }
 
@@ -260,7 +265,7 @@ namespace AllTameable
                             Gradient grad = new Gradient();
                             grad.colorKeys = colKeys;
                             colFade.grad = grad;
-                            DBG.blogDebug("colFade.clrKeys=" + colFade.grad.colorKeys[1].color);
+                            //DBG.blogDebug("colFade.clrKeys=" + colFade.grad.colorKeys[1].color);
 
 
                         }
@@ -655,7 +660,7 @@ namespace AllTameable
             float[] rot = { 0, 3, -3, 6, -5 }; // max +-20
             for (double i = 0; i < mushnumber; i++)
             {
-                DBG.blogDebug("i=" + i);
+                //DBG.blogDebug("i=" + i);
                 itemlocations[(int)i] = new Vector3((float)((1 - 3 * offset[(int)i]) * distancefromCenter * Math.Cos(i * radperstep)), -0.1f + offset[(int)i], (float)((1 - 3 * offset[(int)i]) * distancefromCenter * Math.Sin(i * radperstep)));
                 //new rotations
                 itemrotations[(int)i] = (new Vector3(180, 180 - (float)(i * radperstep * 180 / Math.PI), 162));

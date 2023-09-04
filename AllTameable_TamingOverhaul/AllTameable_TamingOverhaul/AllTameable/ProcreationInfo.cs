@@ -17,6 +17,7 @@ namespace AllTameable.CLLC
         private int level = 1;
         private bool newLevel = false;
 
+
         public int GetLevel(int oldLevel)
         {
             if (newLevel)
@@ -31,134 +32,295 @@ namespace AllTameable.CLLC
             if (!GetComponentInParent<Growup>() & !GetComponentInParent<EggGrow>())
             {
                 Character thischar = gameObject.GetComponent<Character>();
-                ParentStart();
+                if ((bool)thischar)
+                {
+                    ParentStart();
+                }
+                
+            }
+            if (GetComponentInParent<EggGrow>())
+            {
+                ItemDrop iDrop = gameObject.GetComponent<ItemDrop>();
+                if ((bool)iDrop)
+                {
+                    ItemDrop.ItemData iData = iDrop.m_itemData;
+                    if(!iData.m_customData.TryGetValue("Infusion",out string infStr))
+                    {
+                        infStr = "None";
+                    }
+                    if (!iData.m_customData.TryGetValue("ExtraEffect", out string effStr))
+                    {
+                        effStr = "None";
+                    }
+                    if(infStr !="None" || effStr != "None")
+                    {
+                        iData.m_shared.m_maxStackSize = 1;
+                    }
+
+                }
             }
         }
 
         public void SetGrow(Character adultchar)
         {
+            DBG.blogDebug("inSetGrow");
             Character thischar = gameObject.GetComponent<Character>();
+            CreatureInfusion thisInf;
+            CreatureExtraEffect thisEff;
             if (thischar != null)
             {
-                API.SetInfusionCreature(adultchar, API.GetInfusionCreature(thischar));
-                API.SetExtraEffectCreature(adultchar, API.GetExtraEffectCreature(thischar));
+                DBG.blogDebug("Has Char");
+                thisInf = API.GetInfusionCreature(thischar);
+                thisEff = API.GetExtraEffectCreature(thischar);
             }
+            else
+            {
+                DBG.blogDebug("No Char");
+                ItemDrop iDrop = gameObject.GetComponent<ItemDrop>();
+                thisEff = iDropGetEff(iDrop);
+                thisInf = iDropGetInf(iDrop);
+            }
+            API.SetInfusionCreature(adultchar, thisInf);
+            API.SetExtraEffectCreature(adultchar, thisEff);
+
         }
 
-        public void SetInfusion(Character mother)
+        private CreatureExtraEffect TryGetExtraEffect(Character thisChar)
         {
+            if ((bool)thisChar.m_nview)
+            {
+                return API.GetExtraEffectCreature(thisChar);
+            }
+            string EffectStr = thisChar.gameObject.GetComponent<ItemDrop>().m_itemData.m_customData["ExtraEffect"];
+            if(!Enum.TryParse(EffectStr, out CreatureExtraEffect effect))
+            {
+                effect = CreatureExtraEffect.None;
+            }
+            return effect;
+        }
+
+        private CreatureInfusion TryGetInfusion(Character thisChar)
+        {
+            if ((bool)thisChar.m_nview)
+            {
+                return API.GetInfusionCreature(thisChar);
+            }
+            string EffectStr = thisChar.gameObject.GetComponent<ItemDrop>().m_itemData.m_customData["Infusion"];
+            if (!Enum.TryParse(EffectStr, out CreatureInfusion inf))
+            {
+                inf = CreatureInfusion.None;
+            }
+            return inf;
+        }
+
+        
+
+
+        public void SetInfusionExtraEffect(Character mother, bool isEgg)
+        {
+            DBG.blogDebug("in SetInfusionExtraEffect");
+            //DBG.blogDebug("has dropPrefab=" + gameObject.GetComponent<ItemDrop>().m_itemData?.m_dropPrefab);
+            //gameObject.GetComponent<ItemDrop>().m_itemData.m_dropPrefab = gameObject;
+            //DBG.blogDebug("has dropPrefab=" + gameObject.GetComponent<ItemDrop>().m_itemData?.m_dropPrefab);
+            DBG.blogDebug("In infusion effect combine");
+            bool setInfusion = false;
+            bool setEffect = false;
+            if (API.IsExtraEffectEnabled())
+            {setEffect = true; }
+            else{DBG.blogDebug("NoExtraEffectEnabled");}
+
+            if (API.IsInfusionEnabled())
+            {setInfusion = true;}
+            else{ DBG.blogDebug("NoinfusionEnabled");}
+
+            if(!setInfusion && !setEffect) { return; }
+
+            CreatureExtraEffect mom_effect = API.GetExtraEffectCreature(mother);
             CreatureInfusion mom_infusion = API.GetInfusionCreature(mother);
             int mom_lvl = mother.GetLevel();
             dad_lvl = mom_info.dad_lvl;
-            dad_infusion = mom_info.dad_infusion;
-            Character thisChar = gameObject.GetComponent<Character>();
-
-            thisChar.m_level = Mathf.RoundToInt((mom_lvl + dad_lvl) / 2);
-            int infusion_num = UnityEngine.Random.Range(0, 100);
-            if (Plugin.AllowMutation.Value && (UnityEngine.Random.Range(0, 100) < (Plugin.MutationChanceInf.Value)))
-            {
-
-
-                for (int i = 0; i < 25; i++)
-                {
-                    API.SetInfusionCreature(thisChar);
-                    CreatureInfusion thisInfusion = API.GetInfusionCreature(thisChar);
-                    if (thisInfusion != mom_infusion && thisInfusion != dad_infusion && thisInfusion != CreatureInfusion.None)
-                    {
-                        DBG.blogDebug("Has Mutation in Infusion");
-                        break;
-                    }
-                }
-
-            }
-            else if (mom_infusion != CreatureInfusion.None || dad_infusion != CreatureInfusion.None)
-            {
-
-                if (infusion_num > 60)
-                {
-                    API.SetInfusionCreature(thisChar, dad_infusion);
-                    //DBG.blogDebug("IsDadInf");
-                }
-                else if (infusion_num > 20)
-                {
-                    API.SetInfusionCreature(thisChar, mom_infusion);
-                    //DBG.blogDebug("IsMomInf");
-                }
-                else
-                {
-                    API.SetInfusionCreature(thisChar, CreatureInfusion.None);
-                    //DBG.blogDebug("IsNoInf");
-                }
-
-            }
-            else
-            {
-                //DBG.blogDebug("Parents have no infusion");
-                API.SetInfusionCreature(thisChar, CreatureInfusion.None);
-            }
-        }
-
-        public void SetExtraEffect(Character mother)
-        {
-            CreatureExtraEffect mom_effect = API.GetExtraEffectCreature(mother);
-            int mom_lvl = mother.GetLevel();
-            dad_lvl = mom_info.dad_lvl;
             dad_effect = mom_info.dad_effect;
-            Character thisChar = gameObject.GetComponent<Character>();
-
-            thisChar.m_level = Mathf.RoundToInt((mom_lvl + dad_lvl) / 2);
-            //DBG.blogDebug("EffEnabled");
-            int effect_num = UnityEngine.Random.Range(0, 100);
-            //DBG.blogDebug("Effect number is=" + effect_num);
-            if (Plugin.AllowMutation.Value && (UnityEngine.Random.Range(0, 100) < (Plugin.MutationChanceEff.Value)))
+            dad_infusion = mom_info.dad_infusion;
+            Character thisChar;
+            if (isEgg)
             {
-
-
-                for (int i = 0; i < 25; i++)
+                DBG.blogDebug("Set Infusion/Effect of Egg");
+                GameObject GrowUp_go = UnityEngine.Object.Instantiate(gameObject.GetComponent<EggGrow>().m_grownPrefab, PetManager.Root.transform);
+                thisChar = GrowUp_go.GetComponent<Character>();
+                DBG.blogDebug("Clone Char of Egg=" + (bool)thisChar);
+                ZNetView m_nview = thisChar.GetComponent<ZNetView>();
+                if (!m_nview.IsValid() || !m_nview.IsOwner())
                 {
-                    API.SetExtraEffectCreature(thisChar);
-                    CreatureExtraEffect thisEffect = API.GetExtraEffectCreature(thisChar);
-                    //DBG.blogDebug("Effect(" + i + ")=" + thisEffect.ToString());
-                    if (thisEffect != mom_effect && thisEffect != dad_effect && thisEffect != CreatureExtraEffect.None)
-                    {
-                        //DBG.blogDebug("i=" + i);
-                        DBG.blogDebug("Has Mutation in Effect");
-                        break;
-                    }
+                    thisChar.gameObject.AddComponent<ItemDrop>();
                 }
-
-            }
-            else if (mom_effect != CreatureExtraEffect.None || dad_effect != CreatureExtraEffect.None)
-            {
-
-                if (effect_num > 60)
-                {
-                    API.SetExtraEffectCreature(thisChar, dad_effect);
-                    //DBG.blogDebug("IsDadEff");
-                }
-                else if (effect_num > 20)
-                {
-                    API.SetExtraEffectCreature(thisChar, mom_effect);
-                    //DBG.blogDebug("IsMomEff");
-                }
-                else
-                {
-                    API.SetExtraEffectCreature(thisChar, CreatureExtraEffect.None);
-                    //DBG.blogDebug("IsNoEff");
-                }
-
             }
             else
             {
-                //DBG.blogDebug("Parents have no infusion");
-                API.SetExtraEffectCreature(thisChar, CreatureExtraEffect.None);
+                thisChar = gameObject.GetComponent<Character>();
             }
+
+            thisChar.m_level = Mathf.RoundToInt((mom_lvl + dad_lvl) / 2);
+            CreatureExtraEffect effectToSet = CreatureExtraEffect.None;
+            CreatureInfusion InfToSet = CreatureInfusion.None;
+            int hasNewInfusion = -1;
+            int hasNewEffect = -1;
+            if (Plugin.AllowMutation.Value)
+            {
+                if(setEffect && UnityEngine.Random.Range(0, 100) < (Plugin.MutationChanceEff.Value)) 
+                {
+                    hasNewEffect = 0; 
+                }
+                if (setInfusion && UnityEngine.Random.Range(0, 100) < (Plugin.MutationChanceInf.Value)) 
+                {
+                    hasNewInfusion = 0; 
+                }
+
+                for (int i = 0; i < 25; i++)
+                {
+                    if(hasNewEffect!=0 && hasNewInfusion!=0)
+                    {
+                        break;
+                    }
+                    DBG.blogDebug("i=" + i);
+                    if (hasNewEffect==0)
+                    {
+                        API.SetExtraEffectCreature(thisChar);
+                        CreatureExtraEffect thisEffect = TryGetExtraEffect(thisChar);
+                        if (thisEffect != mom_effect && thisEffect != dad_effect && thisEffect != CreatureExtraEffect.None)
+                        {
+                            DBG.blogDebug("Effect(" + i + ")=" + thisEffect.ToString());
+                            DBG.blogDebug("Has Mutation in Effect");
+                            effectToSet = thisEffect;
+                            hasNewEffect = 1;
+                        }
+                    }
+                    if (hasNewInfusion==0)
+                    {
+                        API.SetInfusionCreature(thisChar);
+                        CreatureInfusion thisInfusion = TryGetInfusion(thisChar);
+                        if (thisInfusion != mom_infusion && thisInfusion != dad_infusion && thisInfusion != CreatureInfusion.None)
+                        {
+                            DBG.blogDebug("Infusion(" + i + ")=" + thisInfusion.ToString());
+                            DBG.blogDebug("Has Mutation in Infusion");
+                            InfToSet = thisInfusion;
+                            hasNewInfusion = 1;
+                        }
+                    }
+
+                }
+            }
+
+            if (hasNewEffect < 0)
+            {
+                DBG.blogDebug("inherit Effect");
+                effectToSet = (CreatureExtraEffect)inheritValue((int)mom_effect, (int)dad_effect);
+            }
+            if (hasNewInfusion < 0)
+            {
+                DBG.blogDebug("inherit Infusion");
+                InfToSet = (CreatureInfusion)inheritValue((int)mom_infusion, (int)dad_infusion);
+            }
+
+            if (!isEgg) 
+            { 
+                API.SetExtraEffectCreature(thisChar, effectToSet);
+                API.SetInfusionCreature(thisChar, InfToSet);
+            }
+            else
+            {
+
+                DBG.blogDebug("Effect=" + effectToSet);
+                DBG.blogDebug("Infusion=" + InfToSet);
+                ItemDrop iDrop = gameObject.GetComponent<ItemDrop>();
+                
+                ItemDrop.ItemData iData = iDrop.m_itemData;
+                //DBG.blogDebug("dropprefab=" + iData.m_dropPrefab);
+                //iData.m_dropPrefab = gameObject;
+                Utils2.addOrUpdateCustomData(iData.m_customData, "ExtraEffect", effectToSet.ToString());
+                Utils2.addOrUpdateCustomData(iData.m_customData, "Infusion", InfToSet.ToString());
+                if (((int)effectToSet + (int)InfToSet) > 0)
+                {
+                    DBG.blogDebug("Set stack size 1");
+                    iData.m_shared.m_maxStackSize = 1;
+                }
+                iDrop.Save();
+
+            }
+
+
         }
+
+        public int inheritValue(int mom_val,int dad_val)
+        {
+            if (mom_val != 0 || dad_val != 0)
+            {
+                int rand_num = UnityEngine.Random.Range(0, 100);
+                if (rand_num > 60)
+                {
+                    DBG.blogDebug("IsDadVal");
+                    return dad_val;
+                }
+                else if (rand_num > 20)
+                {
+                    DBG.blogDebug("IsMomVal");
+                    return mom_val;
+                }
+                else
+                {
+                    DBG.blogDebug("IsNoVal");
+                }
+            }
+            return 0;
+        }
+
+
+
+
+        public static CreatureExtraEffect iDropGetEff(ItemDrop iDrop)
+        {
+            CreatureExtraEffect effect = CreatureExtraEffect.None;
+            if ((bool)iDrop)
+            {
+                DBG.blogDebug("Has iDrop");
+                if (iDrop.m_itemData.m_customData.TryGetValue("ExtraEffect",out string effStr))
+                {
+                    DBG.blogDebug("Custom Value="+ effStr);
+                    if (Enum.TryParse(effStr,out CreatureExtraEffect CreatureEff))
+                    {
+                        DBG.blogDebug("GotEffect=" + CreatureEff);
+                        effect = CreatureEff;
+                    }
+                }
+            }
+            return effect;
+        }
+
+        public static CreatureInfusion iDropGetInf(ItemDrop iDrop)
+        {
+            CreatureInfusion Inf = CreatureInfusion.None;
+            if ((bool)iDrop)
+            {
+                if (iDrop.m_itemData.m_customData.TryGetValue("Infusion", out string InfStr))
+                {
+                    DBG.blogDebug("Custom Value=" + InfStr);
+                    if (Enum.TryParse(InfStr, out CreatureInfusion CreatureInf))
+                    {
+                        DBG.blogDebug("GotInfusion=" + CreatureInf);
+                        Inf = CreatureInf;
+                    }
+                }
+            }
+            return Inf;
+        }
+
+
 
         public void SetCreature(Character mother)
         {
-            //try
-            //{
+            try
+            {
+            //DBG.blogDebug("in SetCreature");
+            //DBG.blogDebug("has dropPrefab=" + gameObject.GetComponent<ItemDrop>().m_itemData?.m_dropPrefab);
             if (!mother.gameObject.TryGetComponent<ProcreationInfo>(out var momProc))
             {
                 //DBG.blogDebug("Adding Procinfo");
@@ -175,7 +337,7 @@ namespace AllTameable.CLLC
             dad_lvl = mom_info.dad_lvl;
             dad_infusion = mom_info.dad_infusion;
             dad_effect = mom_info.dad_effect;
-
+            DBG.blogDebug("dad_lvl =" + dad_lvl);
             //Test Level
             level = mom_lvl;
             //DBG.blogDebug("level="+ level);
@@ -209,18 +371,27 @@ namespace AllTameable.CLLC
 
             //Sets the level
             Character thischar = gameObject.GetComponent<Character>();
-            if(thischar != null)
+            bool isEgg = (bool)gameObject.GetComponent<EggGrow>();
+            if (thischar != null)
             {
                 thischar.SetLevel(level);
                 thischar.SetTamed(true);
             }
+            if (isEgg)
+            {
+                gameObject.GetComponent<ItemDrop>().SetQuality(level);
+            }
 
-            
+            SetInfusionExtraEffect(mother, isEgg);
+
+
+            /*
+
 
             if (API.IsExtraEffectEnabled())
             {
                 //DBG.blogDebug("Setting Extra Effect");
-                SetExtraEffect(mother);
+                SetExtraEffect(mother, isEgg);
             }
             else
             {
@@ -230,14 +401,15 @@ namespace AllTameable.CLLC
             if (API.IsInfusionEnabled())
             {
                 //DBG.blogDebug("Setting Infusion");
-                SetInfusion(mother);
+                SetInfusion(mother, isEgg);
             }
             else
             {
                 DBG.blogDebug("NoinfusionEnabled");
             }
+            */
 
-            /*
+            
         }
         catch
         {
@@ -252,7 +424,6 @@ namespace AllTameable.CLLC
                 level = 0;
             }
         }
-            */
 
         }
 
@@ -260,7 +431,7 @@ namespace AllTameable.CLLC
         private void SetInfo(Character other)
         {
             dad_lvl = other.GetLevel();
-            DBG.blogDebug("dad_lvl =" + dad_lvl);
+            
             try
             {
                 dad_effect = API.GetExtraEffectCreature(other);

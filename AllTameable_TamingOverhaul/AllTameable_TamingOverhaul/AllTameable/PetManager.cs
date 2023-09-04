@@ -5,6 +5,7 @@ using System.Collections.Generic;
 //using System;
 using System.Reflection;
 using UnityEngine;
+using System.Globalization;
 
 namespace AllTameable
 {
@@ -29,7 +30,6 @@ namespace AllTameable
         {
             Root = new GameObject("MiniOnes");
             Root.transform.SetParent(Plugin.prefabManager.Root.transform);
-
         }
 
         public static void Init2nd(GameObject init_go) //attempts to init tames that failed before spawning, common with creatures added with mods
@@ -93,8 +93,9 @@ namespace AllTameable
             if (Plugin.HatchingEgg.Value)
             {
                 DBG.blogDebug("init Dragonegg");
-                AlterDragonEgg();
+                AlterEggs();
                 //InitEgg(zns.GetPrefab("Hatchling"));
+                //AddHatchDragonEgg();
             }
             TameListCfg.UnpackAndOverwriteMates();
             TameListCfg.UnpackAndOverwriteTrades();
@@ -307,8 +308,9 @@ namespace AllTameable
             wtame = zns.GetPrefab("Wolf").GetComponent<Tameable>();
             if (Plugin.HatchingEgg.Value)
             {
-                AlterDragonEgg();
+                AlterEggs();
                 //InitEgg(zns.GetPrefab("Hatchling"));
+                //AddHatchDragonEgg();
             }
             createHeartEffect();
 
@@ -587,34 +589,49 @@ namespace AllTameable
                     component3.m_partnerCheckRange = 4f * tb.size;
                     component3.m_totalCheckRange = 10f * tb.size;
 
-                    if (flag && component3.m_offspring != null && !Plugin.CheckHuman(go) && !tb.procretionOverwrite)
+                    if (tb.eggValue + "" != "")
+                    {
+                        bool drakeEgg = true;
+                        float hatchtime = 1800;
+                        string colorStr = "default";
+                        float size = 1;
+                        parseEggValue(tb.eggValue, ref drakeEgg, ref hatchtime, ref colorStr, ref size);
+                        //DBG.blogDebug(drakeEgg + "," + hatchtime + "," + colorStr + "," + size);
+                        component3.m_offspring = InitEgg(go,tb, hatchtime, drakeEgg, colorStr, size);
+
+                    }
+                    else if (flag && component3.m_offspring != null && !Plugin.CheckHuman(go) && !tb.procretionOverwrite)
                     {
                         Growup component4 = component3.m_offspring.GetComponent<Growup>();
-                        component4.m_growTime = tb.growTime;
+                        if ((bool)component4)
+                        {
+                            component4.m_growTime = tb.growTime;
+                        }
+                        else
+                        {
+                            EggGrow eggGrow = component3.m_offspring.GetComponent<EggGrow>();
+                            if ((bool)eggGrow)
+                            {
+                                Growup hatchedGrow = eggGrow.m_grownPrefab.GetComponent<Growup>();
+                                if ((bool)hatchedGrow)
+                                {
+                                    hatchedGrow.m_growTime = tb.growTime;
+                                    DBG.blogWarning(go.name + " has egg as offspring, modified hatched prefab growtime");
+                                }
+                            }
+                            else
+                            {
+                                DBG.blogWarning("Failed to set grow time for " + go.name);
+                            }
+                            
+                        }
                         DBG.blogDebug(go.name + " already has offspring, modified tameable");
                     }
                     else if (go.name == "Hatchling" && Plugin.HatchingEgg.Value)
                     {
                         component3.m_offspring = DrakeEggPrefab;
                     }
-                    /*
-                    else if ((go.name == "Seeker" | go.name == "SeekerBrute") && Plugin.SeekerBroodOffspring.Value)
-                    {
-                        DBG.blogDebug("Setting " + go.name + " Offspring to Seeker Brood");
-                        component3.m_offspring = zns.GetPrefab("SeekerBrood");
-
-                        if (component3.m_offspring.GetComponent<Tameable>() == null)
-                        {
-                            DBG.blogInfo("Making Seeker Brood only tameable by offspring");
-                            string tameList = "SeekerBrood,true,1,90,2,10,30,20,,false,false,10,0,150,400";
-                            string[] arr = tameList.Split(',');
-                            Plugin.TameTable seekerbrood_tamtetable = TameListCfg.ArrToTametable(arr);
-                            AddTame(component3.m_offspring, seekerbrood_tamtetable);
-                        }
-
-                    }
-                    */
-                    else
+                    else 
                     {
                         //DBG.blogDebug("setting spawnmini");
 
@@ -775,11 +792,12 @@ namespace AllTameable
             isInit = false;
             isInit2 = false;
         }
-        private static void AlterDragonEgg()
+        private static void AlterEggs()
         {
             if (!(bool)ChickenEggPrefab)
             {
                 ChickenEggPrefab = ZNetScene.instance.GetPrefab("ChickenEgg");
+                ChickenEggPrefab.GetComponent<ItemDrop>().m_itemData.m_shared.m_maxQuality = 999;
             }
             if (!(bool)DrakeEggPrefab)
             {
@@ -790,7 +808,24 @@ namespace AllTameable
             GameObject notGrow = PrefabManager.CopyIntoParent(eggclone.GetComponent<Transform>().Find("Not Growing"), DrakeEggPrefab.transform).gameObject;
             EggGrow eggGrow = DrakeEggPrefab.AddComponent<EggGrow>(eggclone.GetComponent<EggGrow>());
             eggGrow.m_notGrowingObject = notGrow;
-            ItemDrop iDrop = DrakeEggPrefab.GetComponent<ItemDrop>();
+            eggGrow.m_growTime = Plugin.HatchingTime.Value;
+            eggGrow.m_tamed = true;
+            eggGrow.tag = "spawned";
+            //eggGrow.m_requireNearbyFire = false;
+            //eggGrow.m_requireUnderRoof = false;
+
+            DBG.blogDebug("Moving Item Drop");
+            GameObject go = DrakeEggPrefab;
+            GameObject backup_go = Object.Instantiate(go, Root.transform);
+            ItemDrop backup_IDrop = backup_go.GetComponent<ItemDrop>();
+            ItemDrop IDrop = go.GetComponent<ItemDrop>();
+            ItemDrop iDropnew = go.AddComponent<ItemDrop>(backup_IDrop);
+            iDropnew.m_itemData.m_shared = IDrop.m_itemData.m_shared;
+            iDropnew.m_itemData.m_shared.m_maxQuality = 999;
+            iDropnew.m_autoPickup = false;
+            iDropnew.Save();
+            Component.Destroy(IDrop);
+            //DrakeEggPrefab = go;
             //EggGrow eggGrow = DrakeEggPrefab.AddComponent<EggGrow>(eggclone.GetComponent<EggGrow>());
             //Component.DestroyImmediate(iDrop);
             //iDrop = DrakeEggPrefab.AddComponent<ItemDrop>(eggclone.GetComponent<ItemDrop>());
@@ -799,10 +834,50 @@ namespace AllTameable
             eggGrow.m_grownPrefab = SpawnMini(ZNetScene.instance.GetPrefab("Hatchling"));
 
         }
-
-        private static GameObject InitEgg(GameObject prefab, bool DrakeEgg = true, string color = "default", float size = 1f)
+        
+        public static void parseEggValue(string eggStr, ref bool DrakeEgg,ref float hatchtime, ref string colorstr,ref float size)
         {
-            DBG.blogDebug("before init");
+            string tempstr = eggStr.Replace(")", "");
+            //DBG.blogDebug("tempstr=" + tempstr);
+            string[] splitstr = tempstr.Split('(');
+            //DBG.blogDebug("splitstr[0]=" + splitstr[0]);
+            if (splitstr[0].ToLower() == "chicken")
+            {
+                DrakeEgg = false;
+            }
+            if (splitstr.Length < 2)
+            {
+                return;
+            }
+            //DBG.blogDebug("splitstr[1]=" + splitstr[1]);
+            string[] splitstr2 = splitstr[1].Split(':');
+            try
+            {
+                hatchtime = float.Parse(splitstr2[0], CultureInfo.InvariantCulture.NumberFormat);
+            }
+            catch
+            {
+                DBG.blogWarning("value for egg hatchtime, make sure the config is written correctly");
+            }
+            if (splitstr2.Length < 2) { return; }
+            colorstr = splitstr2[1];
+            if (splitstr2.Length < 3) { return; }
+            try
+            {
+                size = float.Parse(splitstr2[2], CultureInfo.InvariantCulture.NumberFormat);
+            }
+            catch
+            {
+                DBG.blogWarning("value for egg is invalid, make sure the config is written correctly");
+            }
+
+        }
+
+
+
+        private static GameObject InitEgg(GameObject prefab, Plugin.TameTable tb, float hatchTime, bool DrakeEgg = true, string color = "default", float size = 1f)
+        {
+            DBG.blogDebug("Creating Egg");
             if (!(bool)ChickenEggPrefab)
             {
                 ChickenEggPrefab = ZNetScene.instance.GetPrefab("ChickenEgg");
@@ -811,64 +886,151 @@ namespace AllTameable
             {
                 DrakeEggPrefab = ZNetScene.instance.GetPrefab("DragonEgg");
             }
-            DBG.blogDebug("past init");
-            GameObject gameObject = Object.Instantiate(ChickenEggPrefab, Root.transform);
-            if(prefab.name == "Hatchling")
+            //DBG.blogDebug("past init");
+            GameObject gameObject;
+            if (DrakeEgg)
             {
-                DBG.blogDebug("Replacing Dragon Egg");
-                //DrakeEggPrefab = Object.Instantiate(ZNetScene.instance.GetPrefab("DragonEgg"), Root.transform);
-                DrakeEggPrefab.name = "old_DragonEgg";
-                gameObject.name = ("DragonEgg");
-                DBG.blogDebug("Replaced Dragon Egg");
+                gameObject = Object.Instantiate(DrakeEggPrefab, Root.transform);
             }
             else
             {
-                gameObject.name = (prefab.name + "Egg");//.Replace("(Clone)", ""); ;
-            }
-            
-            //Object.DestroyImmediate(gameObject.GetComponent<ItemDrop>());
-            //ItemDrop itdrop = prefab.gameObject.GetComponent<ItemDrop>();
-            //gameObject.AddComponent<ItemDrop>(itdrop);
-            //GameObject itemBase = Jotunn.Managers.PrefabManager.Instance.GetPrefab("Fish9");
-            DBG.blogDebug("past clone");
-            if (DrakeEgg)
-            {
-                DBG.blogDebug("in drakegg");
-                GameObject clone = Jotunn.Managers.PrefabManager.Instance.CreateClonedPrefab("DragonEgg" + "_at", DrakeEggPrefab);
-                //var clone = itemBase;
-                var attachbase = clone.GetComponent<Transform>().Find("attach");
-                var attachcopy = PrefabManager.AttachChild(gameObject.transform.Find("attach"), attachbase.transform.Find("model"), "DrakeEggModel");
-                Transform toremove = gameObject.transform.Find("attach").Find("default");
-                if ((bool)toremove) { toremove.parent = null; }
-            }
-            if (false) //old hatch
-            {
-                DBG.blogDebug("making hatch");
-                Hatch hatch = gameObject.AddComponent<Hatch>();
-                //hatch.m_name = prefab.GetComponent<ItemDrop>().m_itemData.m_shared.m_name;
-                hatch.m_grownPrefab = zns.GetPrefab("Hatchling");
-                hatch.m_growTime = Plugin.HatchingTime.Value;
-                DragonEgg = gameObject;
-                DBG.blogDebug("Set Hatch hatch");
+                gameObject = Object.Instantiate(ChickenEggPrefab, Root.transform);
             }
 
-            ItemDrop.ItemData iData = gameObject.GetComponent<ItemDrop>().m_itemData;
-            iData.m_dropPrefab = gameObject;
 
+            gameObject.name = (prefab.name + "Egg_AT");//.Replace("(Clone)", ""); ;
+
+            //DBG.blogDebug("past clone");
+            int newHash = gameObject.name.GetStableHashCode();
+            if (!(bool)ObjectDB.instance.GetItemPrefab(newHash))
+            {
+                //DBG.blogDebug("Adding to ObjectDB");
+                ObjectDB.instance.m_itemByHash.Add(newHash, gameObject);
+
+            }
+            ItemDrop[] MultiiDrops = gameObject.GetComponents<ItemDrop>();
+            if (MultiiDrops.Length > 1)
+            {
+                //DBG.blogDebug("removing one iDrop");
+                Component.DestroyImmediate(MultiiDrops[0]);
+            }
+            //DBG.blogDebug("iDrops size=" + gameObject.GetComponents<ItemDrop>().Length);
+            ItemDrop iDrop = gameObject.GetComponent<ItemDrop>();
+            ItemDrop.ItemData iData = iDrop.m_itemData;
+            Character prefab_char = prefab.GetComponent<Character>();
+            if ((bool)prefab_char)
+            {
+                iData.m_shared.m_name = prefab_char.m_name + " Egg";
+                DBG.blogDebug("char name =" + prefab_char.m_name);
+            }
+            else
+            {
+                iData.m_shared.m_name = prefab.name + " Egg";
+            }
+            //iData.m_shared.m_name = prefab.name + " Egg";
+            iData.m_shared.m_description = "Egg from a "+ prefab.name+ ", place it near some heat and it may hatch";
+            float power = 3;
+            if (size > 1) { power = 2.2f; }
+            iData.m_shared.m_weight = iData.m_shared.m_weight * Mathf.Pow(size,power);
+            iData.m_shared.m_teleportable = true;
+            //iData.m_shared.m_maxStackSize = 20; ;
+            iDrop.Save();
+            //iData.m_shared.m_icons[0] = iconsprites[1] as Sprite;
+            //iData.m_dropPrefab = gameObject;
+            //DBG.blogDebug("dropPrefab=" + iData.m_dropPrefab);
             EggGrow eggGrow = gameObject.GetComponent<EggGrow>();
-            eggGrow.m_grownPrefab = SpawnMini(prefab);
+            eggGrow.m_growTime = hatchTime;
+            bool createOffspring = true;
+            //see if there is already an offspring to set as hatched prefab
+            if (prefab.TryGetComponent<Procreation>(out Procreation proc))
+            {
+                if((bool)proc.m_offspring && !tb.procretionOverwrite)
+                {
+                    createOffspring = false;
+                    eggGrow.m_grownPrefab = proc.m_offspring;
+                }
+            }
+            if (createOffspring) { eggGrow.m_grownPrefab = SpawnMini(prefab); }
 
-
+            GameObject model;
             
+            if (DrakeEgg) { model = gameObject.transform.Find("attach").Find("model").transform.gameObject; }
+            else { model = gameObject.transform.Find("attach").Find("default").transform.gameObject; }
+
+
+            if (size != 1)
+            {
+                //change size of egg
+                gameObject.transform.Find("attach").localScale = new Vector3(size, size, size);
+                LODGroup lod = model.GetComponent<LODGroup>();
+                if ((bool)lod)
+                {
+                   lod.size =Mathf.Max(9.3f-(2.14f*size),5f);
+                }
+                //DBG.blogDebug("localscale=" + gameObject.transform.Find("attach").localScale);
+                DBG.blogDebug("Changed Size");
+            }
+            
+            //change color
+           
+            //mat.color = Color.cyan;
+            if (color != "default")
+            {
+                DBG.blogDebug("changing color");
+                Material  mat = model.GetComponent<MeshRenderer>().material;
+                if (color.Length==7 && color[0] == '#')
+                {
+                    DBG.blogDebug("attempting hex for " + color);
+                    Color replacecol = Utils2.colFromHex(color);
+                    
+                    //mat.SetFloat("_BumpScale", 0.8f);
+                    //mat.SetFloat("_Metallic", 0.1f);
+                    string textureStr = "NewChickenEgg";
+                    if (DrakeEgg) 
+                    {
+                        mat.color = replacecol;
+                        mat.SetColor("_EmissionColor", replacecol*new Color(1,3,1));
+                        textureStr = "NewDragonEgg";
+                        Light light = gameObject.transform.Find("attach").Find("Point light").transform.gameObject.GetComponent<Light>();
+                        light.color = replacecol;
+                    }
+                    else
+                    {
+                        mat.color = 1.2f*replacecol * new Color(0.9f*replacecol.r -0.1f, 0.95f, 1.3f);//accounts for slight yellow of base texture
+                    }
+                    //Texture2D newTex = iData.m_shared.m_icons[0].texture;
+                    
+                    Object[] iconsprites = PrefabManager.getAssetBundle().LoadAssetWithSubAssets("Assets/CustomItems/"+textureStr+".png");
+                    Sprite baseSprite = (Sprite)iconsprites[1];
+                    Texture2D newTex = baseSprite.texture;
+                    //DBG.blogDebug("newTex name=" + newTex.name);
+                    newTex = Utils2.changeEggTex(newTex, replacecol,DrakeEgg);
+                    Sprite newSprite = Sprite.Create(newTex, baseSprite.rect, baseSprite.pivot);
+                    iData.m_shared.m_icons[0] = newSprite;
+
+                }
+                else
+                {
+                    DBG.blogWarning("Not correctly formatted as HEX color");
+                }
+                
+            }
+            else
+            {
+                DBG.blogDebug("Keeping color default");
+            }
+
+            //DBG.blogDebug("chickenEggDrop="+ZNetScene.instance.GetPrefab("ChickenEgg").GetComponent<ItemDrop>().m_itemData.m_dropPrefab);
+
             try
             {
                 //PrefabManager.PostRegister(gameObject);
                 Jotunn.Managers.PrefabManager.Instance.RegisterToZNetScene(gameObject);
-                DBG.blogInfo("Succesfully registered HatchingDragonEgg");
+                DBG.blogInfo("Succesfully registered "+gameObject.name);
             }
             catch
             {
-                DBG.blogInfo("Already Registered DragonEgg");
+                DBG.blogInfo("Already Registered " + gameObject.name);
             }
             return gameObject;
         }

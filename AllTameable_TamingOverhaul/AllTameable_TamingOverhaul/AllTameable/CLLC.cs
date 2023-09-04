@@ -1,9 +1,11 @@
 using CreatureLevelControl;
+using System.Collections.Generic;
 
 namespace AllTameable.CLLC
 {
     internal class CLLC
     {
+        
         public static int Hatchlevel(Character character)
         {
             return API.LevelRand(character);
@@ -36,5 +38,7 @@ namespace AllTameable.CLLC
             }
 
         }
+
+        
     }
 }

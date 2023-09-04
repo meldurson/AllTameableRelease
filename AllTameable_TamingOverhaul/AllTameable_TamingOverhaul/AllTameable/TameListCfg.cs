@@ -441,7 +441,13 @@ namespace AllTameable
                                 tmtbl.specificOffspringString += ","+direct_value;
                                 
                             }
-                            
+                            else if (prop_key == "egg")
+                            {
+                                tmtbl.eggValue = direct_value;
+
+                            }
+
+
                         }
                         if (!started_manual)
                         {

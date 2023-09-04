@@ -22,6 +22,7 @@ namespace AllTameable
                     //DBG.blogDebug("no equiped item");
                     return;
                 }
+                //DBG.blogDebug("in GetHoverText");
                 if (Plugin.toolNames.Contains(plr.GetCurrentWeapon().m_dropPrefab.name))
                 {
                     Tameable _tm = __instance.GetComponentInParent<Tameable>();
@@ -200,19 +201,21 @@ namespace AllTameable
         }
 
 
-        public static float max_interact_default = 6f;
+        public static float max_interact_default = 3.5f;
         //public static float max_interact_recent = 6f; //implement if there is ever an issue with other interact lengths
         [HarmonyPrefix]
-        [HarmonyPatch(typeof(Player), "FindHoverObject")] //removes healing 0 text if healing less than 0.1hp
+        [HarmonyPatch(typeof(Player), "FindHoverObject")]
         private static void Prefix(Player __instance, GameObject hover, Character hoverCreature)
         {
             if (Plugin.useTamingTool.Value && (bool)hoverCreature)
             {
+                //DBG.blogDebug("inHover distance is" + __instance.m_maxInteractDistance + "," + Plugin.increasedInteractDistance.Value);
                 //max_interact_recent = Player.m_localPlayer.m_maxInteractDistance;
                 if (__instance.GetCurrentWeapon().m_dropPrefab == ZNetScene.instance.GetPrefab(Plugin.advtoolPrefabName))
                 {
                     __instance.m_maxInteractDistance = Plugin.increasedInteractDistance.Value;
                 }
+                
             }
         }
 
@@ -220,6 +223,14 @@ namespace AllTameable
         [HarmonyPatch(typeof(Player), "FindHoverObject")] //adds effect around creature if healing
         private static void Postfix(Player __instance, ref GameObject hover, ref Character hoverCreature)
         {
+            if ((bool)hoverCreature)
+            {
+                if (!(bool)hover && setHoverCreature(__instance,hoverCreature))
+                {
+                    hover = hoverCreature.gameObject;
+                }
+            }
+
             __instance.m_maxInteractDistance = max_interact_default;
 
             //if ((bool)hoverCreature) { DBG.blogDebug("char=" + hoverCreature.name); }
@@ -228,7 +239,15 @@ namespace AllTameable
             max_interact_recent = (float)Math.Round((max_interact_default + max_interact_recent) / 2, 1);
             __instance.m_maxInteractDistance = max_interact_recent;
             */
+        }
 
+        public static bool setHoverCreature(Player plr, Character hoverChar)
+        {
+            if (Vector3.Distance(plr.m_eye.position, hoverChar.transform.position) < plr.m_maxInteractDistance)
+            {
+                return true;
+            }
+            return false;
         }
 
         public static bool ShowDebug(Player plr)
