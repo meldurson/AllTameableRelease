@@ -272,7 +272,53 @@ namespace AllTameable
                     }
                 }
             }
+            if (scene.name == "locations")
+            {
+                DBG.blogDebug("In location Load");
+                GameObject loc = scene.GetRootGameObjects()[0];
+                ItemDrop iDrop = ZNetScene.instance.GetPrefab("DragonEgg").GetComponent<ItemDrop>();
+                Transform altar = loc.transform.Find("Mountains").Find("Dragonqueen").Find("Altar");
+
+                for (int i = 0; i < altar.childCount; i++)
+                {
+                    Transform child = altar.GetChild(i);
+                    string name = child.name;
+                    DBG.blogDebug("name=" + name);
+                    if (name.StartsWith("dragoneggcup"))
+                    {
+                        DBG.blogDebug("modifying " + name);
+                        ItemStand iStand = child.GetComponent<ItemStand>();
+                        if ((bool)iStand)
+                        {
+                            changeIStandIDrop(iStand, iDrop);
+                        }
+                        else
+                        {
+                            DBG.blogDebug("No Item Stand");
+                        }
+                    }
+
+                }
+            }
         }
+
+        public static void changeIStandIDrop(ItemStand IStand, ItemDrop IDrop)
+        {
+            int removed = 0;
+            for (int i = 0; i < IStand.m_supportedItems.Count + removed; i++)
+            {
+                ItemDrop item = IStand.m_supportedItems[i - removed];
+                if (!(bool)item || item == null || item.name == "DragonEgg")
+                {
+                    DBG.blogDebug("removing itemdrop from " + IStand.name);
+                    IStand.m_supportedItems.Remove(item);
+                    removed++;
+                }
+
+            }
+            IStand.m_supportedItems.Add(IDrop);
+        }
+    
 
 
         public static int Safe_GetNrOfInstances(GameObject prefab, Vector3 center, float maxRange, bool isError, bool eventCreaturesOnly = false, bool procreationOnly = false)
@@ -654,11 +700,14 @@ namespace AllTameable
         public static bool listloaded = false;
         public static bool PreSetMinis = true;
 
+
         public static String tamingtoolPrefabName = "el_TamingTool";
         public static String advtoolPrefabName = "el_AdvancedTamingTool";
         public static String t1foodPrefabName = "el_T1Food";
         public static String t2foodPrefabName = "el_T2Food";
         public static String t3foodPrefabName = "el_T3Food";
+
+
 
         public static List<string> hidden_foodNames = new List<string> { t1foodPrefabName, t2foodPrefabName, t3foodPrefabName };
         public static List<string> toolNames = new List<string> { tamingtoolPrefabName, advtoolPrefabName };

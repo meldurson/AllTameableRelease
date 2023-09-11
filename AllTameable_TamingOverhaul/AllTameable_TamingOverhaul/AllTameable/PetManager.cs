@@ -823,13 +823,13 @@ namespace AllTameable
             iDropnew.m_itemData.m_shared = IDrop.m_itemData.m_shared;
             iDropnew.m_itemData.m_shared.m_maxQuality = 999;
             iDropnew.m_autoPickup = false;
+            iDropnew.m_itemData.m_shared.m_maxStackSize = 20;
             iDropnew.Save();
             Component.Destroy(IDrop);
-            //DrakeEggPrefab = go;
-            //EggGrow eggGrow = DrakeEggPrefab.AddComponent<EggGrow>(eggclone.GetComponent<EggGrow>());
-            //Component.DestroyImmediate(iDrop);
-            //iDrop = DrakeEggPrefab.AddComponent<ItemDrop>(eggclone.GetComponent<ItemDrop>());
-            //iDrop.GetCopyOf<ItemDrop>(eggclone.GetComponent<ItemDrop>());
+
+            ItemStand EggStand = ZNetScene.instance.GetPrefab("dragoneggcup").GetComponent<ItemStand>();
+            Plugin.changeIStandIDrop(EggStand, iDropnew);
+
             DBG.blogDebug("Added EggGrow");
             eggGrow.m_grownPrefab = SpawnMini(ZNetScene.instance.GetPrefab("Hatchling"));
 
@@ -999,8 +999,8 @@ namespace AllTameable
                         mat.color = 1.2f*replacecol * new Color(0.9f*replacecol.r -0.1f, 0.95f, 1.3f);//accounts for slight yellow of base texture
                     }
                     //Texture2D newTex = iData.m_shared.m_icons[0].texture;
-                    
-                    Object[] iconsprites = PrefabManager.getAssetBundle().LoadAssetWithSubAssets("Assets/CustomItems/"+textureStr+".png");
+
+                    Object[] iconsprites = PrefabManager.getAssetBundle().LoadAssetWithSubAssets("Assets/CustomItems/" + textureStr + ".png");
                     Sprite baseSprite = (Sprite)iconsprites[1];
                     Texture2D newTex = baseSprite.texture;
                     //DBG.blogDebug("newTex name=" + newTex.name);
