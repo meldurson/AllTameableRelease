@@ -816,6 +816,16 @@ namespace AllTameable
 
             DBG.blogDebug("Moving Item Drop");
             GameObject go = DrakeEggPrefab;
+            ItemDrop IDrop = go.GetComponent<ItemDrop>();
+            IDrop.m_itemData.m_shared.m_maxQuality = 999;
+            IDrop.m_autoPickup = false;
+            IDrop.m_itemData.m_shared.m_maxStackSize = 20;
+            IDrop.Save();
+
+
+            /*
+             DBG.blogDebug("Moving Item Drop");
+            GameObject go = DrakeEggPrefab;
             GameObject backup_go = Object.Instantiate(go, Root.transform);
             ItemDrop backup_IDrop = backup_go.GetComponent<ItemDrop>();
             ItemDrop IDrop = go.GetComponent<ItemDrop>();
@@ -826,9 +836,13 @@ namespace AllTameable
             iDropnew.m_itemData.m_shared.m_maxStackSize = 20;
             iDropnew.Save();
             Component.Destroy(IDrop);
+             */
 
-            ItemStand EggStand = ZNetScene.instance.GetPrefab("dragoneggcup").GetComponent<ItemStand>();
-            Plugin.changeIStandIDrop(EggStand, iDropnew);
+
+
+
+            //ItemStand EggStand = ZNetScene.instance.GetPrefab("dragoneggcup").GetComponent<ItemStand>();
+            //Plugin.changeIStandIDrop(EggStand, iDropnew);
 
             DBG.blogDebug("Added EggGrow");
             eggGrow.m_grownPrefab = SpawnMini(ZNetScene.instance.GetPrefab("Hatchling"));

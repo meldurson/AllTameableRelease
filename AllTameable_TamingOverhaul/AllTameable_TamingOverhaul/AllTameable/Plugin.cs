@@ -272,6 +272,7 @@ namespace AllTameable
                     }
                 }
             }
+            /*
             if (scene.name == "locations")
             {
                 DBG.blogDebug("In location Load");
@@ -300,6 +301,7 @@ namespace AllTameable
 
                 }
             }
+            */
         }
 
         public static void changeIStandIDrop(ItemStand IStand, ItemDrop IDrop)

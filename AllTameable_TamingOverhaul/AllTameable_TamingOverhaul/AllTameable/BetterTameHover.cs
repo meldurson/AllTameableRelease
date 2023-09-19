@@ -9,8 +9,43 @@ namespace AllTameable
     internal static class BetterTameHover
     {
         [HarmonyPostfix]
+        [HarmonyPatch(typeof(ItemDrop), "GetHoverText")]
+
+        private static void ID_GetHoverText(ItemDrop __instance, ref string __result)
+        {
+            EggGrow eggGrow = __instance.gameObject.GetComponent<EggGrow>();
+            if ((bool)eggGrow)
+            {
+                Component[] components = __instance.gameObject.GetComponents(typeof(Component));
+                int iDropOrder = 999;
+                int EggGrowOrder = 999;
+                for(int i =0; i < components.Length; i++)
+                {
+                    if(components[i].GetType()== typeof(ItemDrop)) { iDropOrder = i; break; }
+                    if(components[i].GetType() == typeof(EggGrow)) { EggGrowOrder = i; break; }
+                }
+                if (iDropOrder < EggGrowOrder)
+                {
+                    if (!__instance.m_nview || !__instance.m_nview.IsValid())
+                    {
+                        return;
+                    }
+                    bool flag = __instance.m_nview.GetZDO().GetFloat(ZDOVars.s_growStart) > 0f;
+                    string text = ((__instance.m_itemData.m_stack > 1) ? "$item_chicken_egg_stacked" : (flag ? "$item_chicken_egg_warm" : "$item_chicken_egg_cold"));
+                    string hoverText = __result;
+                    int num = hoverText.IndexOf('\n');
+                    if (num > 0)
+                    {
+                        __result = hoverText.Substring(0, num) + " " + Localization.instance.Localize(text) + hoverText.Substring(num);
+                    }
+                }
+                
+            }
+        }
+
+        [HarmonyPostfix]
         [HarmonyPatch(typeof(Character), "GetHoverText")]
-        private static void GetHoverText(Character __instance, ref string __result)
+        private static void Char_GetHoverText(Character __instance, ref string __result)
         {
             if (Plugin.useTamingTool.Value)
             {
