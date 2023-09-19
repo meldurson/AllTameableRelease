@@ -17,7 +17,7 @@ using Jotunn.Managers;
 
 namespace AllTameable
 {
-    [BepInPlugin("meldurson.valheim.AllTameable", "AllTameable-Overhaul", "1.3.1")]
+    [BepInPlugin("meldurson.valheim.AllTameable", "AllTameable-Overhaul", "1.3.2")]
 
     [BepInDependency("com.jotunn.jotunn", BepInDependency.DependencyFlags.HardDependency)]
     [BepInDependency("org.bepinex.plugins.creaturelevelcontrol", BepInDependency.DependencyFlags.SoftDependency)]
@@ -272,54 +272,9 @@ namespace AllTameable
                     }
                 }
             }
-            /*
-            if (scene.name == "locations")
-            {
-                DBG.blogDebug("In location Load");
-                GameObject loc = scene.GetRootGameObjects()[0];
-                ItemDrop iDrop = ZNetScene.instance.GetPrefab("DragonEgg").GetComponent<ItemDrop>();
-                Transform altar = loc.transform.Find("Mountains").Find("Dragonqueen").Find("Altar");
 
-                for (int i = 0; i < altar.childCount; i++)
-                {
-                    Transform child = altar.GetChild(i);
-                    string name = child.name;
-                    DBG.blogDebug("name=" + name);
-                    if (name.StartsWith("dragoneggcup"))
-                    {
-                        DBG.blogDebug("modifying " + name);
-                        ItemStand iStand = child.GetComponent<ItemStand>();
-                        if ((bool)iStand)
-                        {
-                            changeIStandIDrop(iStand, iDrop);
-                        }
-                        else
-                        {
-                            DBG.blogDebug("No Item Stand");
-                        }
-                    }
-
-                }
-            }
-            */
         }
 
-        public static void changeIStandIDrop(ItemStand IStand, ItemDrop IDrop)
-        {
-            int removed = 0;
-            for (int i = 0; i < IStand.m_supportedItems.Count + removed; i++)
-            {
-                ItemDrop item = IStand.m_supportedItems[i - removed];
-                if (!(bool)item || item == null || item.name == "DragonEgg")
-                {
-                    DBG.blogDebug("removing itemdrop from " + IStand.name);
-                    IStand.m_supportedItems.Remove(item);
-                    removed++;
-                }
-
-            }
-            IStand.m_supportedItems.Add(IDrop);
-        }
     
 
 
