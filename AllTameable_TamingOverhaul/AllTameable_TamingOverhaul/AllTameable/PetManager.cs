@@ -792,19 +792,43 @@ namespace AllTameable
             isInit = false;
             isInit2 = false;
         }
+
+        private static void fixHenSize()
+        {
+            Transform Hen = ZNetScene.instance.GetPrefab("Hen").transform;
+            Transform vis = Hen.Find("Visual");
+            vis.localScale = new Vector3(1, 1, 1);
+            Hen.localScale = new Vector3(1.5f, 1.5f, 1.5f);
+            Transform chickentrans = ChickenEggPrefab.GetComponent<EggGrow>().m_grownPrefab.transform;
+            chickentrans.localScale = new Vector3(0.8f, 0.8f, 0.8f);
+            CapsuleCollider caps = Hen.GetComponent<CapsuleCollider>();
+            if ((bool)caps)
+            {
+                caps.center = new Vector3(0, 0.25f, 0);
+                caps.height = 0.47f;
+                caps.radius = 0.14f;
+            }
+            DBG.blogDebug("Fixed size of Hens and Chickens");
+        }
+
         private static void AlterEggs()
         {
             if (!(bool)ChickenEggPrefab)
             {
                 ChickenEggPrefab = ZNetScene.instance.GetPrefab("ChickenEgg");
-                ChickenEggPrefab.GetComponent<ItemDrop>().m_itemData.m_shared.m_maxQuality = 999;
+                
             }
             if (!(bool)DrakeEggPrefab)
             {
                 DrakeEggPrefab = ZNetScene.instance.GetPrefab("DragonEgg");
             }
+            if (Plugin.FixHenSize.Value) { fixHenSize(); }
+            ChickenEggPrefab.GetComponent<ItemDrop>().m_itemData.m_shared.m_maxQuality = 999;
             DBG.blogDebug("Set Chicken Egg");
-            GameObject eggclone = Jotunn.Managers.PrefabManager.Instance.CreateClonedPrefab("chickenEggClone" + "_at", ChickenEggPrefab);
+
+            GameObject eggclone = Jotunn.Managers.PrefabManager.Instance.GetPrefab("chickenEggClone_at");
+            if (!(bool)eggclone) { eggclone = Jotunn.Managers.PrefabManager.Instance.CreateClonedPrefab("chickenEggClone_at", ChickenEggPrefab); }
+            //GameObject eggclone = Jotunn.Managers.PrefabManager.Instance.CreateClonedPrefab("chickenEggClone_at", ChickenEggPrefab); 
             GameObject notGrow = PrefabManager.CopyIntoParent(eggclone.GetComponent<Transform>().Find("Not Growing"), DrakeEggPrefab.transform).gameObject;
             EggGrow eggGrow = DrakeEggPrefab.AddComponent<EggGrow>(eggclone.GetComponent<EggGrow>());
             eggGrow.m_notGrowingObject = notGrow;
@@ -901,7 +925,24 @@ namespace AllTameable
                 DrakeEggPrefab = ZNetScene.instance.GetPrefab("DragonEgg");
             }
             //DBG.blogDebug("past init");
-            GameObject gameObject;
+            //if already made, return
+            GameObject gameObject = Jotunn.Managers.PrefabManager.Instance.GetPrefab(prefab.name + "Egg_AT");
+            if ((bool)gameObject)
+            {
+                DBG.blogDebug("Jotunn Already Egg with name " + prefab.name + "Egg_AT, skipping creation");
+                try
+                {
+                    //PrefabManager.PostRegister(gameObject);
+                    Jotunn.Managers.PrefabManager.Instance.RegisterToZNetScene(gameObject);
+                    DBG.blogInfo("Succesfully registered " + gameObject.name);
+                }
+                catch
+                {
+                    DBG.blogInfo("Already Registered " + gameObject.name);
+                }
+                return gameObject;
+            }
+            
             if (DrakeEgg)
             {
                 gameObject = Object.Instantiate(DrakeEggPrefab, Root.transform);
@@ -914,6 +955,7 @@ namespace AllTameable
 
             gameObject.name = (prefab.name + "Egg_AT");//.Replace("(Clone)", ""); ;
 
+            
             //DBG.blogDebug("past clone");
             int newHash = gameObject.name.GetStableHashCode();
             if (!(bool)ObjectDB.instance.GetItemPrefab(newHash))

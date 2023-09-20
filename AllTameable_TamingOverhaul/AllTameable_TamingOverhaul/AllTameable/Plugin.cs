@@ -631,6 +631,8 @@ namespace AllTameable
 
         public static ConfigEntry<int> DefaultCommandType;
 
+        public static ConfigEntry<bool> FixHenSize;
+
         public static ManualLogSource logger;
 
         public static Dictionary<string, TameTable> cfgList = new Dictionary<string, TameTable>();
@@ -737,7 +739,8 @@ namespace AllTameable
                 new ConfigDescription("Range that mass command will try attempt to command tamed creatures", null, new ConfigurationManagerAttributes { IsAdminOnly = true }));
             DefaultCommandType = base.Config.Bind("4:Mass Commands", "DefaultCommandType", defaultValue: 0,
                 "What type of command will the game start as default when loading into the game, 0=Only same creature, 1=Same creature and any creature it can mate with, 2=Any tamed creature in range");
-
+            FixHenSize = base.Config.Bind("1:General", "Fix Hen Size", defaultValue: true,
+                new ConfigDescription("Hens are not sized correctly when above level 1, do you want to fix this and adjust sizes of hens and chickens", null, new ConfigurationManagerAttributes { IsAdminOnly = true }));
             is_Basic = UseSimple.Value;
             cfgPath = base.Config.ConfigFilePath;
             LoadTamelists();
